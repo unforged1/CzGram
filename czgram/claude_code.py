@@ -1,0 +1,201 @@
+"""Ask Claude through the Claude Code CLI, using the user's Claude subscription.
+
+Text from the screen is untrusted, so the CLI runs with no tools, no MCP servers,
+no settings and no saved session, in an empty directory. If it ever reports having
+tools anyway, the lookup is abandoned before the prompt can do anything.
+
+The environment is rebuilt from scratch: an inherited ANTHROPIC_API_KEY would
+silently bill the API instead of using the subscription.
+"""
+import glob
+import json
+import os
+import re
+import shutil
+import signal
+import subprocess
+import tempfile
+import threading
+
+_KEEP_ENV = ("HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "TMPDIR", "XDG_RUNTIME_DIR",
+             "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME",
+             "DISPLAY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "BROWSER",
+             "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy")
+TIMEOUT_S = 90
+FALLBACK_MODELS = ("default", "opus", "sonnet", "haiku")
+
+
+def _version_key(path):
+    return [int(n) for n in re.findall(r"\d+", path.split("/claude-code/")[-1].split("/")[0])]
+
+
+def find():
+    """Path of the Claude Code binary: on PATH, standard installs, then the desktop app's copy."""
+    home = os.path.expanduser("~")
+    exe = shutil.which("claude") or shutil.which("claude", path=os.pathsep.join(
+        (os.path.join(home, ".local/bin"), os.path.join(home, ".claude/local"),
+         os.path.join(home, ".npm-global/bin"), "/usr/local/bin")))
+    if exe:
+        return exe
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
+    # The desktop app keeps one copy per version and updates replace them, so look each time.
+    bundled = [p for p in glob.glob(os.path.join(base, "Claude/claude-code/*/*/claude"))
+               if os.access(p, os.X_OK)]
+    return max(bundled, key=_version_key) if bundled else None
+
+
+def clean_env():
+    env = {k: os.environ[k] for k in _KEEP_ENV if k in os.environ}
+    env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+    return env
+
+
+def status():
+    """("missing" | "signed_out" | "api_billing" | "ready", message) for the settings window."""
+    exe = find()
+    if not exe:
+        return "missing", "Claude Code isn't installed"
+    try:
+        res = subprocess.run([exe, "auth", "status"], capture_output=True, text=True,
+                             timeout=15, env=clean_env())
+        info = json.loads(res.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return "signed_out", "Couldn't check the Claude Code sign-in"
+    if not info.get("loggedIn"):
+        return "signed_out", "Claude Code needs you to sign in once"
+    plan = info.get("subscriptionType")
+    if not plan:
+        return "api_billing", "Claude Code is signed in with API billing, not a subscription"
+    return "ready", "Signed in to Claude Code (%s plan)" % str(plan).capitalize()
+
+
+def login():
+    """Starts the browser sign-in. Returns the process, or None without a binary."""
+    exe = find()
+    if not exe:
+        return None
+    return subprocess.Popen([exe, "auth", "login", "--claudeai"], env=clean_env(),
+                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL, start_new_session=True)
+
+
+def list_models():
+    """Model names the signed-in account can use, asked of Claude Code itself.
+
+    Only the startup handshake runs, so no prompt is sent and no usage is spent.
+    Returns FALLBACK_MODELS if that fails, for example when signed out.
+    """
+    exe = find()
+    if not exe:
+        return list(FALLBACK_MODELS)
+    with tempfile.TemporaryDirectory(prefix="czgram-") as empty:
+        proc = subprocess.Popen(
+            [exe, "-p", "--input-format", "stream-json", "--output-format", "stream-json",
+             "--verbose", "--tools", "", "--strict-mcp-config", "--setting-sources", "",
+             "--disable-slash-commands", "--no-session-persistence"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+            encoding="utf-8", cwd=empty, env=clean_env())
+        watchdog = threading.Timer(15, proc.kill)
+        watchdog.start()
+        models = []
+        try:
+            proc.stdin.write('{"type":"control_request","request_id":"czgram",'
+                             '"request":{"subtype":"initialize"}}\n')
+            proc.stdin.flush()
+            for line in proc.stdout:
+                try:
+                    msg = json.loads(line)
+                except ValueError:
+                    continue
+                if msg.get("type") == "control_response":
+                    rows = msg.get("response", {}).get("response", {}).get("models", [])
+                    models = [r["value"] for r in rows if isinstance(r, dict) and r.get("value")]
+                    break
+        except (OSError, ValueError):
+            pass
+        finally:
+            watchdog.cancel()
+            proc.kill()
+            proc.stdin.close()
+            proc.stdout.close()
+            proc.wait()
+    return models or list(FALLBACK_MODELS)
+
+
+def _friendly(text):
+    low = (text or "").lower()
+    if "not logged in" in low or "/login" in low or "authentication" in low or "oauth" in low:
+        return "Claude Code isn't signed in. Use Sign in under Settings."
+    if "limit" in low:
+        return "You've reached your Claude usage limit for now. The offline rule still applies."
+    if "model" in low:
+        return "This model isn't available on your plan. Choose another in Settings."
+    return "Claude Code couldn't answer: %s" % (text or "unknown error")[:160]
+
+
+def run(prompt, system, emit, model="default"):
+    """Stream one answer through emit(text=...), ending in emit(done=True) or emit(error=...)."""
+    exe = find()
+    if not exe:
+        emit(error="Claude Code wasn't found. Install it, or use an API key in Settings.")
+        return
+    cmd = [exe, "-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
+           "--effort", "low", "--tools", "", "--strict-mcp-config", "--setting-sources", "",
+           "--disable-slash-commands", "--no-session-persistence", "--system-prompt", system]
+    if model and model != "default":
+        cmd += ["--model", model]
+    with tempfile.TemporaryDirectory(prefix="czgram-") as empty:
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, text=True, encoding="utf-8",
+                                cwd=empty, env=clean_env())
+
+        def stop(*_):
+            proc.kill()
+            raise SystemExit(0)
+
+        # Dismissing the bar terminates this process; the CLI must not outlive it.
+        signal.signal(signal.SIGTERM, stop)
+        signal.signal(signal.SIGALRM, lambda *_: (proc.kill(), emit(error="Claude Code took too long."),
+                                                  os._exit(0)))
+        signal.alarm(TIMEOUT_S)
+        proc.stdin.write(prompt)
+        proc.stdin.close()
+        finished = False
+        try:
+            for line in proc.stdout:
+                try:
+                    msg = json.loads(line)
+                except ValueError:
+                    continue
+                kind = msg.get("type")
+                if kind == "system" and msg.get("subtype") == "init":
+                    if msg.get("tools") or msg.get("mcp_servers"):
+                        proc.kill()
+                        emit(error="Stopped: Claude Code started with tools enabled.")
+                        return
+                    if msg.get("model"):
+                        emit(model=msg["model"])
+                elif kind == "stream_event":
+                    event = msg.get("event", {})
+                    delta = event.get("delta", {})
+                    if event.get("type") == "content_block_delta" and delta.get("type") == "text_delta":
+                        emit(text=delta["text"])
+                elif kind == "result":
+                    finished = True
+                    for name, used in (msg.get("modelUsage") or {}).items():
+                        emit(usage={"model": name, "input": used.get("inputTokens", 0),
+                                    "output": used.get("outputTokens", 0),
+                                    "thinking": used.get("thinkingTokens", 0),
+                                    "cache_read": used.get("cacheReadInputTokens", 0),
+                                    "cache_write": used.get("cacheCreationInputTokens", 0)})
+                    if msg.get("is_error"):
+                        emit(error=_friendly(str(msg.get("result") or "")))
+                    else:
+                        emit(done=True)
+        finally:
+            signal.alarm(0)
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
+        if not finished:
+            emit(error="Claude Code stopped without answering.")

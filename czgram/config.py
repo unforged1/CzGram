@@ -1,0 +1,79 @@
+"""Settings and per-user paths. Stdlib only: imported by the tiny hotkey daemon."""
+import json
+import os
+import stat
+import tempfile
+
+DEFAULTS = {
+    "detection": "screenshot",  # "screenshot" | "html" | "manual" (the word the user selected)
+    "auto_fallback": True,      # screenshot unreadable -> read page code
+    "quick_mode": False,        # PrintScreen starts and stops continuous page reading
+    "low_ram": False,
+    "mascot": True,
+    "speed_mode": False,        # blue look and instant text when the model is Opus or Fable
+    "language": "en",           # explanation language: "en" | "cs"
+    "use_claude": False,        # send recognised text to the chosen AI service
+    "claude_backend": "code",   # "code": Claude plan | "api": Anthropic key | "custom": other provider
+    "code_model": "default",    # "default" leaves the choice to the user's Claude account
+    "api_key": "",              # optional; the SDK's own credentials are used if empty
+    "model": "claude-opus-5-5",
+    "custom_base_url": "http://localhost:3001/v1",  # FreeLLMAPI's usual local address
+    "custom_api_key": "",
+    "custom_model": "",
+    "bind_printscreen": True,
+}
+
+
+def config_dir():
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    return os.path.join(base, "czgram")
+
+
+def config_path():
+    return os.path.join(config_dir(), "config.json")
+
+
+def exists():
+    return os.path.exists(config_path())
+
+
+def load():
+    cfg = dict(DEFAULTS)
+    try:
+        with open(config_path(), encoding="utf-8") as f:
+            cfg.update({k: v for k, v in json.load(f).items() if k in DEFAULTS})
+    except (OSError, ValueError):
+        pass
+    return cfg
+
+
+def save(cfg):
+    """Write atomically, owner-only: the file can hold an API key."""
+    os.makedirs(config_dir(), mode=0o700, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=config_dir(), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+        os.chmod(tmp, stat.S_IRUSR | stat.S_IWUSR)
+        os.replace(tmp, config_path())
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def runtime_dir():
+    """Private directory for the app's sockets (mode 0700)."""
+    base = os.environ.get("XDG_RUNTIME_DIR")
+    path = os.path.join(base, "czgram") if base else os.path.join(
+        tempfile.gettempdir(), "czgram-%d" % os.getuid())
+    os.makedirs(path, mode=0o700, exist_ok=True)
+    st = os.lstat(path)
+    if st.st_uid != os.getuid() or not stat.S_ISDIR(st.st_mode):
+        raise RuntimeError("unsafe runtime directory: " + path)
+    os.chmod(path, 0o700)
+    return path
+
+
+def ui_socket():
+    return os.path.join(runtime_dir(), "ui.sock")

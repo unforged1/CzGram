@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Local stand-in with the same markup and timing rules as the real exercise page:
+     a wrong answer shows an explanation and waits, a right one fills the gap and
+     moves on by itself. Questions here are written for this test. -->
+<html lang="cs"><head><meta charset="utf-8"><title>Vyjmenovaná slova po P – Rozhodovačka</title>
+<style>body{font:18px sans-serif;margin:0;padding-top:170px;text-align:center}.card{display:inline-block;padding:12px 40px;margin:8px;border:1px solid #999;cursor:pointer}.wrong{background:#e55}.correct{background:#5c5}</style></head>
+<body><h2>Vyjmenovaná slova po P</h2>
+<div id="playground"><div id="question-wrapper" class="question-wrapper">
+<div class="topic" data-data="topic" style="display:none"></div><div class="translation" data-data="translation"></div>
+<div class="question-content" data-data="question"></div>
+<div class="options" data-data="options"></div>
+<exercise-explanation id="explanation" style="display:none"></exercise-explanation></div>
+<div class="control-panel"><button id="next" style="display:none">Další</button></div></div>
+<script>
+const Q=[["nápis: Neklop","t","i","i y",""],["kop","to koně","y","i y",""],["neuchop","telný","i","i y",""],["kop","to koně","y","i y",""],["s","r","ý","í ý",""],["m","t","y","i y","umývat nádobí"]];
+const params=new URLSearchParams(location.search),delay=+(params.get("delay")||1500);
+let n=+(params.get("start")||0);const q=document.querySelector("[data-data=question]"),o=document.querySelector("[data-data=options]"),x=document.getElementById("explanation");
+function show(){if(n>=Q.length){q.textContent="Hotovo";o.innerHTML="";x.style.display="none";return}
+ const[a,b,,opts,note]=Q[n];document.querySelector(".translation").textContent=note;q.innerHTML=`<span>${a}<span class="gap">_</span>${b}</span>`;o.innerHTML="";x.style.display="none";
+ for(const c of opts.split(" ")){const s=document.createElement("span");s.className="card";s.dataset.data="option";s.innerHTML=`<span>${c}</span>`;s.onclick=()=>pick(s,c);o.append(" ",s)}}
+function pick(s,c){const[a,b,right]=Q[n];x.style.display="block";x.textContent="Vysvětlení k této otázce.";
+ if(c!==right){s.classList.add("wrong");return}
+ s.classList.add("correct");q.innerHTML=`<span>${a}${c}${b}</span>`;setTimeout(()=>{n++;show()},delay)}
+show();
+// ?play=ms answers by itself for the automated test: wrong first on question one, then right.
+const play=+(params.get("play")||0);
+if(play){let wrongDone=false;setInterval(()=>{if(n>=Q.length||x.style.display==="block"&&document.querySelector(".correct"))return;
+ const right=Q[n][2];let pick_=right;if(n===0&&!wrongDone){pick_=right==="i"?"y":"i";wrongDone=true}
+ [...o.querySelectorAll(".card")].find(c=>c.textContent===pick_).click()},play)}
+</script></body></html>
