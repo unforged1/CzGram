@@ -7,6 +7,7 @@ only filled in where a rule actually decides the letter.
 import re
 import unicodedata
 
+from . import sz
 from .kb import TOPICS
 
 LETTERS = "a-zA-ZáčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ"
@@ -14,9 +15,10 @@ _GAP = r"_+|…+|\.{3,}|—{2,}|-{3,}"
 _WORD_GAP = re.compile(r"(?<![%s\d_.:/])([%s]*)(%s)([%s]*)(?![\d_/])" % (LETTERS, LETTERS, _GAP, LETTERS))
 _OPT = r"[%s]{1,12}(?: [%s]{1,8})?" % (LETTERS, LETTERS)
 _CHOICE = re.compile(r"([%s]*)[(\[]\s*(%s(?:\s*/\s*%s)+)\s*[)\]]([%s]*)" % (LETTERS, _OPT, _OPT, LETTERS))
-_BARE_CHOICE = re.compile(r"(?<![%s/])(i|y|í|ý|s|z|se|ze|ú|ů|mě|mně|bě|bje|vě|vje|ji|jí|mi|my)/"
-                          r"(i|y|í|ý|s|z|se|ze|ú|ů|mě|mně|bě|bje|vě|vje|ji|jí|mi|my)(?![%s/:])"
-                          % (LETTERS, LETTERS))
+_BARE_OPT = r"(?:i|y|í|ý|s|z|se|ze|vz|ú|ů|mě|mně|bě|bje|vě|vje|ji|jí|mi|my)"
+# Two or three options, e.g. s/z, z/ze or s/z/vz, written without brackets.
+_BARE_CHOICE = re.compile(r"(?<![%s/])(%s(?:/%s){1,2})(?![%s/:])"
+                          % (LETTERS, _BARE_OPT, _BARE_OPT, LETTERS))
 _TOKEN = re.compile(r"[%s]+" % LETTERS)
 # "Napište nám" (write to us) is the Umíme sites' contact button; "napište" looks like a task.
 _IGNORED = {"napiste nam"}
@@ -176,14 +178,14 @@ _CHOICE_TOPICS = (
 )
 
 
-def classify_choice(pre, options, suf):
-    """Topic for a bracketed choice such as b(i/y)t or (mě/mně)."""
+def classify_choice(pre, options, suf, following=""):
+    """Topic for a choice such as b(i/y)t or (mě/mně). `following` is the text after it."""
     low = {o.strip().lower() for o in options}
     if low & {"i", "y", "í", "ý"}:
         topic, suggest, why = classify_gap(pre, suf)
         return topic, fit_options(suggest, options)[0], why
     if low <= {"s", "z", "vz", "se", "ze"}:
-        return ("s_z_predpony" if suf else "s_z_predlozky"), "", ""
+        return sz.classify(pre, options, suf, following)
     for keys, topic in _CHOICE_TOPICS:
         if low & keys:
             return topic, "", ""
@@ -233,14 +235,14 @@ def analyze_line(line):
     for m in _CHOICE.finditer(line):
         pre, raw, suf = m.groups()
         options = [o.strip() for o in raw.split("/")]
-        topic, suggest, why = classify_choice(pre, options, suf)
+        topic, suggest, why = classify_choice(pre, options, suf, line[m.end():])
         items.append(_item("gap", m.group(0), topic, line, suggest, why))
         seen_spans.append(m.span())
 
     for m in _BARE_CHOICE.finditer(line):
         if any(a <= m.start() < b for a, b in seen_spans):
             continue
-        topic, suggest, why = classify_choice("", [m.group(1), m.group(2)], "")
+        topic, suggest, why = classify_choice("", m.group(1).split("/"), "", line[m.end():])
         items.append(_item("gap", m.group(0), topic, line, suggest, why))
         seen_spans.append(m.span())
 
@@ -249,6 +251,16 @@ def analyze_line(line):
         if any(a <= m.start() < b for a, b in seen_spans):
             continue
         pre, _gap, suf = m.groups()
+        # "_e školy", "_e sestrou": a preposition missing its consonant.
+        if not pre and suf.lower() == "e" and _TOKEN.match(line[m.end():].lstrip()):
+            topic, suggest, why = sz.classify("", ["se", "ze"], "", line[m.end():])
+            items.append(_item("gap", m.group(0), topic, line, suggest, why))
+            continue
+        # A gap at the start of a word is a missing prefix: _mrzl, _míchat.
+        if not pre and suf and strip(suf[0]) not in "aeiouy" and czech:
+            topic, suggest, why = sz.classify("", ["s", "z", "vz"], suf, "")
+            items.append(_item("gap", m.group(0), topic, line, suggest, why))
+            continue
         if not pre and not suf:
             # Dotted leaders and rulers are not gaps unless the line reads as Czech.
             if czech:
@@ -328,7 +340,7 @@ def describe_exercise(question, options, lang="en", exercise="", context=""):
         if low & {"i", "y", "í", "ý"}:
             topic, suggest, why = classify_gap(pre, suf)
         else:
-            topic, suggest, why = classify_choice(pre, options, suf)
+            topic, suggest, why = classify_choice(pre, options, suf, question[gap.end():])
     else:
         topic, suggest, why = classify_choice("", options, "")
     if topic == "gap_general":
@@ -403,12 +415,12 @@ _NO_RULE = {
 _FILL = {"cs": "Doplň: %s", "en": "Fill in: %s"}
 _BOTH = {"cs": "y, nebo i", "en": "y or i"}
 _REASONS = {
-    "cs": {"hard": "%s je tvrdá souhláska", "soft": "%s je měkká souhláska",
+    "cs": {**sz.REASONS["cs"], "hard": "%s je tvrdá souhláska", "soft": "%s je měkká souhláska",
            "listen": "po %s rozhoduje výslovnost", "listed": "patří k vyjmenovanému slovu (kořen %s-)",
            "prefix": "vypadá to na předponu vy-/vý-%s",
            "default": "žádné vyjmenované slovo nesedí, proto i/í%s",
            "homophone": "stejně znějí, rozhoduje význam: %s"},
-    "en": {"hard": "%s is a hard consonant", "soft": "%s is a soft consonant",
+    "en": {**sz.REASONS["en"], "hard": "%s is a hard consonant", "soft": "%s is a soft consonant",
            "listen": "after %s, the pronunciation decides", "listed": "it belongs to a listed word (root %s-)",
            "prefix": "looks like the prefix vy-/vý-%s",
            "default": "no listed word matches, so i/í is the default%s",

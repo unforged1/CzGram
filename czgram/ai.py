@@ -22,9 +22,28 @@ Write in {language}. Keep Czech terms and examples in Czech.
 
 Answer options can differ only by vowel length (i/í, y/ý), so name the exact option, including \
 its length. Any note, word or sentence given as context can decide the meaning of the word or \
-change which rule applies, so use it rather than judging the gapped word alone."""
+change which rule applies, so use it rather than judging the gapped word alone.
+
+Apply these rules exactly, and give only reasons that are true of the word in question:
+- Listed words (vyjmenovaná slova): after b, f, l, m, p, s, v, z the root takes y/ý only in the \
+words below and their relatives; otherwise i/í. Never call a word a listed word unless its root \
+is on this list.
+{listed}
+- Prefixes: s- means down, off or together (sjet, smíchat); z- means a change of state or \
+completion (zmrznout, zčervenat); vz- means upward or coming into being (vzlétnout, vzkvétat). \
+Decide by meaning, not by sound; one root can take different prefixes (sletět × vzlétnout).
+- Prepositions: s takes the instrumental (s kým? s čím?: s kamarádem); z takes the genitive \
+(z čeho? odkud?: z lesa). Work out the case of the noun first.
+- se/ze: use the long form before words starting with s, š, z, ž and in set phrases (se sestrou, \
+ze školy, se mnou, ze mě, ze dne); otherwise s/z."""
 
 _LANG = {"en": "English", "cs": "Czech"}
+
+
+def _listed_words():
+    """The official table, taken from the offline rules so both always agree."""
+    from .kb import TOPICS
+    return "\n".join("  " + line for line in TOPICS["vyjmenovana"]["cs"].split("\n")[1:])
 
 
 _held_star = False
@@ -78,7 +97,7 @@ def main():
                    "rule for its spelling and, where it helps, its part of speech or form.")
     if req.get("topic"):
         prompt += "\nThe offline rule matcher suggests the topic: %s." % req["topic"]
-    system = SYSTEM.format(language=_LANG.get(cfg["language"], "English"))
+    system = SYSTEM.format(language=_LANG.get(cfg["language"], "English"), listed=_listed_words())
 
     if cfg["claude_backend"] == "code":
         from . import claude_code

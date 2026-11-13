@@ -103,26 +103,28 @@ TOPICS = {
        "Otherwise vě: věc, věda, květ, svět, věřit.",
 },
 "s_z_predpony": {
- "keys": ["predpon", "predpona"],
+ "keys": ["predpon", "predpona", "vz"],
  "title": {"cs": "Předpony s-, z-, vz-", "en": "Prefixes s-, z-, vz-"},
  "cs": "s- = pohyb dolů, z povrchu, dohromady: sběhnout, sejmout, sečíst, spojit.\n"
        "z- = změna stavu, dokonavost: zčervenat, zmrznout, zhasnout, změřit.\n"
        "vz- = pohyb vzhůru, vznik: vzlétnout, vzkvétat, vzpomenout.\n"
-       "Pomůcka: význam, ne výslovnost. Předponu ověř podle významové řady.",
+       "Pomůcka: význam, ne výslovnost. Stejný kořen může mít různé předpony podle významu: sletět (dolů) × vzlétnout (nahoru), sběhnout (dolů) × zběhnout (utéct).",
  "en": "s- = movement down, off a surface, or together: sběhnout, sejmout, sečíst, spojit.\n"
        "z- = change of state, completion: zčervenat, zmrznout, zhasnout, změřit.\n"
        "vz- = upward movement, coming into being: vzlétnout, vzkvétat.\n"
-       "Decide by meaning, not by pronunciation.",
+       "Decide by meaning, not by pronunciation. One root can take different prefixes: sletět (fly down) × vzlétnout (fly up), sběhnout (run down) × zběhnout (desert).",
 },
 "s_z_predlozky": {
  "keys": ["predlozk", "predlozka"],
  "title": {"cs": "Předložky s, z", "en": "Prepositions s, z"},
  "cs": "s + 7. pád (s kým? s čím?): s kamarádem, se sestrou.\n"
        "z + 2. pád (odkud? z čeho?): ze školy, z lesa.\n"
-       "Dvojtvar: se/ze před slovy, která začínají na stejnou nebo podobnou hlásku (se sestrou, ze zahrady).",
+       "Dvojtvar se/ze píšeme před slovy začínajícími na s, š, z, ž (se sestrou, ze zahrady, ze školy) a v ustálených spojeních (se mnou, ze mě, ze dne). Jinak s/z.\n"
+       "Pomůcka: nejdřív urči pád podstatného jména (s kým? × z čeho?), pak délku předložky.",
  "en": "s + instrumental (with whom/what): s kamarádem, se sestrou.\n"
        "z + genitive (from where/what): ze školy, z lesa.\n"
-       "Use se/ze before words beginning with the same or a similar sound (se sestrou, ze zahrady).",
+       "Use se/ze before words starting with s, š, z, ž (se sestrou, ze zahrady, ze školy) and in set phrases (se mnou, ze mě, ze dne); otherwise s/z.\n"
+       "Tip: find the noun's case first (s kým? × z čeho?), then the form.",
 },
 "u_krouzek": {
  "keys": ["krouzk", "carka nad"],

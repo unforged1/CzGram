@@ -73,6 +73,31 @@ def run(pgm):
     return parse_hocr(res.stdout.decode("utf-8", "replace"), pgm)
 
 
+# Tesseract reads the slash in short choices as l, í, i, I, | or nothing, and s as 5,
+# z as 2: "slz", "zíze", "(2/ze)", "sse", "slzivz". Put the slashes back.
+_SEP = r"[/|lIíi1\\é]"
+_NOT_LETTER_BEFORE = r"(?<![^\W\d_])"
+_NOT_LETTER_AFTER = r"(?![^\W\d_])"
+_CHOICE_REPAIRS = (
+    (re.compile(_NOT_LETTER_BEFORE + r"[s5]%s?z%s?vz" % (_SEP, _SEP) + _NOT_LETTER_AFTER), "s/z/vz"),
+    (re.compile(_NOT_LETTER_BEFORE + r"[z2]%s?ze" % _SEP + _NOT_LETTER_AFTER), "z/ze"),
+    (re.compile(_NOT_LETTER_BEFORE + r"[s5]%s?se" % _SEP + _NOT_LETTER_AFTER), "s/se"),
+    (re.compile(_NOT_LETTER_BEFORE + r"[s5]%s?z" % _SEP + _NOT_LETTER_AFTER), "s/z"),
+)
+# "slz" is also a real word (bez slz: without tears); after these it stays as it is.
+_TEARS = re.compile(r"(?:bez|plný|plné|plná|plna|mnoho|spousta|kapky|kapek|proud|potok)\s+$", re.I)
+
+
+def repair_choices(line):
+    for pattern, fixed in _CHOICE_REPAIRS:
+        def swap(m, fixed=fixed):
+            if fixed == "s/z" and m.group(0) == "slz" and _TEARS.search(line[:m.start()]):
+                return m.group(0)
+            return fixed
+        line = pattern.sub(swap, line)
+    return line
+
+
 def parse_hocr(doc, pgm=None):
     rows, confs, word_id = [], [], 0
     for m in _TOKEN.finditer(doc):
@@ -90,7 +115,7 @@ def parse_hocr(doc, pgm=None):
             rows.append([])
     rows = [r for r in rows if r]
     image = _Image(pgm) if pgm else None
-    lines = [_assemble(r, image) for r in rows]
+    lines = [repair_choices(_assemble(r, image)) for r in rows]
     mean = sum(confs) / len(confs) if confs else 0.0
     if len(confs) < MIN_WORDS:
         return OcrResult(lines, False, "no readable text in the screenshot", mean)

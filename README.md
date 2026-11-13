@@ -9,7 +9,7 @@ rule, with an animated mascot explaining it.
 ## Install
 
 ```bash
-sudo apt install ./dist/czgram_1.6.0_all.deb
+sudo apt install ./dist/czgram_1.7.0_all.deb
 ```
 
 Then open **CzGram** from the applications menu (or run `czgram`), choose your settings and press **Save**.
@@ -114,6 +114,15 @@ Settings shows the tokens CzGram's Claude lookups have used today, over 7 days a
 and `czgram --usage` gives a breakdown by model. The numbers are the ones Claude reports, kept in
 `~/.local/state/czgram/usage.json`, which holds only numbers. Other providers aren't counted. It covers CzGram only, so it
 won't match your plan's overall usage, and it can't show how much of your plan's limit remains. Thinking tokens are part of output.
+
+## Prefixes and prepositions (s/z/vz, z/ze, s/se)
+
+Offline, CzGram suggests a prefix only for common words where one prefix is standard (smíchat, zmrznout, vzkvétat).
+Where the meaning decides, as with sletět (fly down) and vzlétnout (fly up), it gives the rule instead. For the
+prepositions s and z it reads the case from the next word's ending when the ending is clear (s kamarádem, z domů),
+and it picks se/ze before s, š, z, ž and in set phrases like se mnou. OCR often reads these choices wrongly (`slz`,
+`zíze`, `(2/ze)`), and CzGram repairs them, leaving real words such as *slz* (tears) alone. AI answers get the same
+rules, plus the official listed-words table.
 
 ## Limits
 
