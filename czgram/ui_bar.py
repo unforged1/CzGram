@@ -9,6 +9,7 @@ import sys
 import tkinter as tk
 
 from . import config, speed
+from .macos import key_text
 
 BG = "#1F1E1D"
 PANEL = "#2B2A28"
@@ -16,7 +17,7 @@ FG = "#F4F1EA"
 MUTED = "#A8A29A"
 ACCENT = "#D97757"
 HINT = "#E8B48F"
-FONT = "DejaVu Sans"
+FONT = "Helvetica Neue" if sys.platform == "darwin" else "DejaVu Sans"
 MAX_TEXT_LINES = 9
 CHARS_PER_TICK = 7  # at 8 ticks a second: quick to read but visibly "spoken"
 QUICK_CHARS_PER_TICK = 40  # quick mode is about getting the answer now
@@ -248,6 +249,9 @@ class Bar:
 
     def _read_primary(self):
         """The system's current selection, whichever app holds it. Empty if there is none."""
+        if sys.platform == "darwin":  # no primary selection on macOS: copy it with ⌘C
+            from . import macos
+            return macos.read_selection()
         for kind in ("UTF8_STRING", "STRING"):
             try:
                 return self.root.selection_get(selection="PRIMARY", type=kind)[:500]
@@ -296,7 +300,7 @@ class Bar:
     def _on_watch_exit(self):
         self.watch = None
         if self.visible:
-            self._set_notice("Quick mode stopped unexpectedly. Press PrintScreen to start it again.")
+            self._set_notice(key_text("Quick mode stopped unexpectedly. Press PrintScreen to start it again."))
             if self.mascot:
                 self.mascot.rest = "idle"
                 self.mascot.set_state("sad")

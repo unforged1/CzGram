@@ -8,6 +8,7 @@ import json
 import sys
 
 from . import config
+from .macos import key_text
 
 
 def emit(**msg):
@@ -116,7 +117,7 @@ def read_selection(cfg, primary):
     else:
         emit(event="result", source="", notice="", items=[],
              empty_title="Nothing selected",
-             empty_text="Highlight a word with the mouse, then press PrintScreen.")
+             empty_text=key_text("Highlight a word with the mouse, then press PrintScreen."))
 
 
 def read_screenshot_after_captured(cfg):

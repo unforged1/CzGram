@@ -15,7 +15,8 @@ _AUTOSTART = "czgram-hotkey.desktop"
 
 
 def extension_dir():
-    for path in (os.path.join(os.path.dirname(HERE), "extension"), "/usr/share/czgram/extension"):
+    for path in (os.path.join(os.path.dirname(HERE), "extension"), "/usr/share/czgram/extension",
+                 os.path.expanduser("~/Library/Application Support/CzGram/extension")):
         if os.path.isdir(path):
             return path
     return "/usr/share/czgram/extension"
@@ -30,6 +31,9 @@ def _command():
 
 
 def native_host_dirs():
+    if sys.platform == "darwin":
+        from . import macos
+        return macos.native_host_dirs()
     home = os.path.expanduser("~")
     cfg = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
     return {
@@ -90,6 +94,26 @@ def _manage_daemon(cfg):
         os.unlink(path)
 
 
+def _daemon_argv():
+    exe = shutil.which("czgram")
+    if exe:
+        return [exe, "--hotkey-daemon"]
+    return ["/usr/bin/env", "PYTHONPATH=" + os.path.dirname(HERE), sys.executable, "-m", "czgram",
+            "--hotkey-daemon"]
+
+
+def _apply_macos(cfg, results):
+    from . import macos
+    if cfg["bind_printscreen"]:
+        ok, msg = macos.install_agent(_daemon_argv())
+    else:
+        ok, msg = macos.remove_agent()
+        if msg == "nothing to restore":
+            return results
+    results.append((ok, msg[0].upper() + msg[1:] + "."))
+    return results
+
+
 def apply(cfg):
     """Returns [(ok, message), ...] for the settings window."""
     results = []
@@ -97,6 +121,8 @@ def apply(cfg):
         install_native_host()
     except OSError as e:
         results.append((False, "Browser connector setup failed: %s." % e))
+    if sys.platform == "darwin":
+        return _apply_macos(cfg, results)
     if cfg["bind_printscreen"]:
         if shortcuts.is_bound():
             results.append((True, "PrintScreen is set."))

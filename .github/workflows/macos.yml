@@ -1,0 +1,28 @@
+name: macOS
+
+on:
+  push:
+    branches: [macos]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-latest   # Apple silicon
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install with the macOS script
+        run: bash packaging/macos/install.sh
+      - name: Installed command and app
+        run: |
+          czgram --version
+          czgram --usage
+          ls "$HOME/Applications/CzGram.app/Contents/MacOS" "$HOME/Applications/CzGram.app/Contents/Resources"
+          head -1 "$HOME/Library/Application Support/CzGram/lib/czgram/nmhost.py"
+      - name: Unit tests
+        run: PYTHONPATH=. "$(brew --prefix)/bin/python3" -m unittest discover -s tests -v 2>&1 | tail -25
+      - name: OCR, hotkeys and settings window
+        run: PYTHONPATH=. "$(brew --prefix)/bin/python3" tests/mac_smoke.py
+      - name: Uninstall
+        run: |
+          bash packaging/macos/uninstall.sh
+          ! test -e "$HOME/Applications/CzGram.app"

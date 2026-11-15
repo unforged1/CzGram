@@ -3,6 +3,7 @@
 X11:              XGetImage through ctypes, no helper programs.
 Wayland / other:  xdg-desktop-portal Screenshot, which writes a PNG; we read it
                   and delete that file straight away so ~/Pictures doesn't fill up.
+macOS:            screencapture into a temporary PNG, deleted straight away.
 """
 import ctypes
 import ctypes.util
@@ -144,8 +145,22 @@ def _png_to_pgm(path):
         return _pgm(g.width, g.height, g.tobytes())
 
 
+def _capture_macos():
+    from . import macos
+    try:
+        path = macos.capture_png()
+    except (OSError, subprocess.SubprocessError) as e:
+        raise CaptureError(str(e))
+    try:
+        return _png_to_pgm(path)
+    finally:
+        os.unlink(path)
+
+
 def capture():
     """Returns PGM bytes. Raises CaptureError."""
+    if sys.platform == "darwin":
+        return _capture_macos()
     if is_wayland():
         return _capture_portal()
     if os.environ.get("DISPLAY"):

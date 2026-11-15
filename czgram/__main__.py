@@ -28,6 +28,9 @@ def main(argv):
         from . import ui_config
         return ui_config.main()
     if cmd == "--hotkey-daemon":
+        if sys.platform == "darwin":
+            from . import macos
+            return macos.run_hotkey_daemon()
         from . import hotkey
         return hotkey.run()
     if cmd == "--scan-file" and len(argv) == 2:

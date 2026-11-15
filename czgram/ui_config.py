@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import claude_code, config, external, install, ipc, ocr, usage
+from .macos import key_text
 
 BG = "#F4F1EA"
 FG = "#1F1E1D"
@@ -15,7 +16,7 @@ MUTED = "#6B665E"
 OK = "#2F7D4F"
 BAD = "#B3402A"
 ACCENT = "#D97757"
-FONT = "DejaVu Sans"
+FONT = "Helvetica Neue" if sys.platform == "darwin" else "DejaVu Sans"
 WRAP = 470
 ANTHROPIC_MODELS = ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1")
 
@@ -170,8 +171,11 @@ class ConfigWindow:
         self._section(right, "Keyboard")
         ttk.Checkbutton(right, text="Use the PrintScreen key for CzGram",
                         variable=v["bind_printscreen"]).pack(anchor="w")
-        self._note(right, "Replaces your desktop's PrintScreen shortcut. Undo it by unticking this, "
-                         "or by running: czgram --restore-shortcut")
+        self._note(right, "Listens for ⌃⌥G, and F13 on extended keyboards, whenever you're logged in. "
+                          "Turn it off by unticking this, or by running: czgram --restore-shortcut"
+                   if sys.platform == "darwin" else
+                   "Replaces your desktop's PrintScreen shortcut. Undo it by unticking this, "
+                   "or by running: czgram --restore-shortcut")
 
         self.status = ttk.Label(body, wraplength=2 * WRAP)
         # Claimed before the rest of the window, so a tall window can't push them off screen.
@@ -342,7 +346,10 @@ class ConfigWindow:
 
     def _open_ext(self):
         path = install.extension_dir()
-        if shutil.which("xdg-open"):
+        if sys.platform == "darwin":
+            from . import macos
+            macos.open_path(path)
+        elif shutil.which("xdg-open"):
             subprocess.Popen(["xdg-open", path])
         self.status.configure(text="Extension folder: " + path, foreground=MUTED)
 
@@ -362,7 +369,20 @@ class ConfigWindow:
             text="Saved. " + " ".join(m[1] for m in messages if m[1]),
             foreground=OK if ok else BAD)
 
+    def _mac_key_names(self, widget):
+        """Macs have no PrintScreen key: name the Mac shortcut instead."""
+        for child in widget.winfo_children():
+            try:
+                text = child.cget("text")
+            except tk.TclError:
+                text = ""
+            if isinstance(text, str) and "PrintScreen" in text:
+                child.configure(text=key_text(text))
+            self._mac_key_names(child)
+
     def run(self):
+        if sys.platform == "darwin":
+            self._mac_key_names(self.root)
         self.root.mainloop()
         return self.saved
 

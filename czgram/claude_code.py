@@ -14,6 +14,7 @@ import re
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 
@@ -34,19 +35,21 @@ def find():
     home = os.path.expanduser("~")
     exe = shutil.which("claude") or shutil.which("claude", path=os.pathsep.join(
         (os.path.join(home, ".local/bin"), os.path.join(home, ".claude/local"),
-         os.path.join(home, ".npm-global/bin"), "/usr/local/bin")))
+         os.path.join(home, ".npm-global/bin"), "/opt/homebrew/bin", "/usr/local/bin")))
     if exe:
         return exe
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
     # The desktop app keeps one copy per version and updates replace them, so look each time.
-    bundled = [p for p in glob.glob(os.path.join(base, "Claude/claude-code/*/*/claude"))
+    bundled = [p for d in (base, os.path.join(home, "Library/Application Support"))
+               for p in glob.glob(os.path.join(d, "Claude/claude-code/*/*/claude"))
                if os.access(p, os.X_OK)]
     return max(bundled, key=_version_key) if bundled else None
 
 
 def clean_env():
     env = {k: os.environ[k] for k in _KEEP_ENV if k in os.environ}
-    env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+    env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" if sys.platform == "darwin" \
+        else "/usr/local/bin:/usr/bin:/bin"
     return env
 
 

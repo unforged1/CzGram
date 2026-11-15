@@ -117,6 +117,10 @@ def _bind_xfce(command):
 
 def restore():
     """Returns (ok, message)."""
+    import sys
+    if sys.platform == "darwin":
+        from . import macos
+        return macos.remove_agent()
     try:
         with open(_backup_path(), encoding="utf-8") as f:
             data = json.load(f)
