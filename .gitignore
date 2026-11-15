@@ -1,3 +1,12 @@
 __pycache__/
 *.pyc
 dist/*.deb
+# Personal files that must never be committed: settings with API keys, token counts, keys.
+config.json
+usage.json
+.env
+*.key
+*.pem
+key.txt
+id_*
+.credentials.json

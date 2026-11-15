@@ -50,13 +50,14 @@ EOF
 
 cp README.md "$ROOT/usr/share/doc/czgram/README.md"
 chmod 644 "$ROOT/usr/share/doc/czgram/README.md"
-cat > "$ROOT/usr/share/doc/czgram/copyright" <<'EOF'
-Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: czgram
-Files: *
-Copyright: 2026 CzGram authors
-License: MIT
-EOF
+# The license text comes from LICENSE, so the package and the repository always agree.
+{
+    printf 'Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/\n'
+    printf 'Upstream-Name: czgram\nSource: https://github.com/unforged1/CzGram\n\n'
+    printf 'Files: *\nCopyright: 2026 unforged1\nLicense: MIT\n'
+    # Debian's format indents the license text and marks blank lines with a dot.
+    tail -n +2 LICENSE | sed -e 's/^[[:space:]]*$/./' -e 's/^/ /'
+} > "$ROOT/usr/share/doc/czgram/copyright"
 
 cat > "$ROOT/DEBIAN/control" <<EOF
 Package: czgram
