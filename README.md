@@ -6,6 +6,7 @@
   <img src="https://img.shields.io/badge/version-1.8.0-D97757?style=for-the-badge" alt="Version 1.8.0">
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
+  <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
   <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
 </p>
 
@@ -39,8 +40,9 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | --- | --- | --- |
 | <img src="https://cdn.simpleicons.org/debian/A81D33" width="16"> **Debian**, **Ubuntu**, **Kali**, Linux Mint, Pop!_OS | ✅ Supported, `.deb` package | [Debian-based](#install-debian) |
 | <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16"> **Arch Linux**, **Manjaro**, **EndeavourOS**, Garuda | ✅ Supported, `PKGBUILD` | [Arch-based](#install-arch) |
+| <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | 🧪 Experimental, `macos` branch | [macOS](#install-macos) |
 | Fedora, openSUSE and other Linux | ⚠️ No package yet | Not tested |
-| Windows, macOS | ❌ Not supported | CzGram needs Linux with X11 or XWayland |
+| Windows | ❌ Not supported | |
 
 Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install, offline OCR and all tests).
 
@@ -48,6 +50,7 @@ Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install,
 | --- | --- | --- |
 | GNOME, XFCE | ✅ Set up for you when you save settings | ✅ |
 | KDE Plasma, Hyprland, Sway, Cinnamon, others | 🛠️ Add a shortcut that runs `czgram --trigger` | ✅ X11 directly, Wayland through `xdg-desktop-portal` |
+| macOS | ✅ **⌃⌥G** (Control-Option-G), or F13 on extended keyboards | ✅ After you allow Screen Recording |
 
 ## 📦 Install
 
@@ -94,6 +97,31 @@ cd CzGram/packaging/arch && makepkg -si
 
 To update later, run `git pull` in the `CzGram` folder, then `makepkg -si` again in `packaging/arch`.
 
+<a id="install-macos"></a>
+
+### <img src="https://cdn.simpleicons.org/apple/999999" width="20"> macOS (experimental)
+
+The macOS port lives on the `macos` branch. You need [Homebrew](https://brew.sh); the script installs Python, Tk,
+Pillow and Tesseract with it, adds the Czech OCR data, and creates `~/Applications/CzGram.app` and a `czgram` command.
+
+```bash
+git clone -b macos https://github.com/unforged1/CzGram.git
+```
+
+```bash
+cd CzGram && bash packaging/macos/install.sh
+```
+
+Macs have no PrintScreen key, so CzGram uses **⌃⌥G** (Control-Option-G), and F13 where your keyboard has one.
+macOS asks for two permissions under **System Settings → Privacy & Security**:
+
+| Permission | Needed for |
+| --- | --- |
+| Screen Recording | Reading the screen. Without it, screenshots show only the desktop background. |
+| Accessibility | Selected word (manual) mode only: CzGram copies your selection with ⌘C. |
+
+To remove it, run `bash packaging/macos/uninstall.sh`.
+
 ### 🚀 First start
 
 Open **CzGram** from the applications menu (or run `czgram`), choose your settings and press **Save**. Then open a Czech
@@ -108,7 +136,8 @@ exercise and press **PrintScreen**. The bar appears at the top of the screen; pr
 > czgram --restore-shortcut
 > ```
 
-Uninstall with `sudo apt remove czgram` (Debian-based) or `sudo pacman -R czgram` (Arch-based).
+Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` (Arch-based) or
+`bash packaging/macos/uninstall.sh` (macOS).
 
 ## ⚙️ Settings
 
@@ -257,6 +286,8 @@ to the service you chose. Only that text is sent, never the image.
 - The offline listed-words check covers common roots and can miss rare relatives.
 - OCR reads the whole screen on Wayland, so other Czech text on screen can show up as items.
 - The bar is an X11 window, shown through XWayland on Wayland.
+- On macOS, the bar and settings window show a Python icon in the Dock while open, and manual mode replaces
+  a non-text clipboard (such as a copied image) when it copies your selection.
 
 ## 🛠️ Development
 
