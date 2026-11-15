@@ -22,7 +22,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 
 ## ✨ Features
 
-| | |
+| Feature | What it does |
 | --- | --- |
 | 📸 **Screenshot OCR** | Finds gaps like `b_dlí`, `Vidím ___ psa` and `(mě/mně)` anywhere on screen. |
 | 🌐 **Page reading** | Reads the browser tab's HTML directly, with automatic fallback either way. |
