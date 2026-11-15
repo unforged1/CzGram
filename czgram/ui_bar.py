@@ -444,7 +444,6 @@ class Bar:
         self.ai_text = ""
         self.ai_key = (item["snippet"], item["line"])
         payload = json.dumps({"snippet": item["snippet"], "line": item["line"],
-                              "topic": item["title"] if item["topic"] else "",
                               "options": item.get("options", []),
                               "context": item.get("context", ""),
                               "selected": item.get("selected", False),

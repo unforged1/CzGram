@@ -83,6 +83,10 @@ to the service you chose. Only that text is sent, never the image.
 
 Pick the service and its model under **AI answers** in settings. Each service remembers its own model.
 
+The AI works out what each exercise tests by itself. CzGram adds a rule only when the gap's own text calls for it:
+the listed-words row for the letter before an i/y gap, the s/z rules for an s/z choice, the capitals rules for a
+V/v choice. This keeps a lookup to about 960 input tokens through Claude Code, down from about 1,840 in 1.7.
+
 **Your Claude plan, through Claude Code.** No API key or per-lookup charge; lookups count toward your plan's
 usage limits. CzGram uses `claude` from your PATH, or else the copy inside the Claude desktop app. Press
 **Sign in** in settings once; this signs Claude Code in separately from the desktop app. **Load models** asks
@@ -121,8 +125,8 @@ Offline, CzGram suggests a prefix only for common words where one prefix is stan
 Where the meaning decides, as with sletět (fly down) and vzlétnout (fly up), it gives the rule instead. For the
 prepositions s and z it reads the case from the next word's ending when the ending is clear (s kamarádem, z domů),
 and it picks se/ze before s, š, z, ž and in set phrases like se mnou. OCR often reads these choices wrongly (`slz`,
-`zíze`, `(2/ze)`), and CzGram repairs them, leaving real words such as *slz* (tears) alone. AI answers get the same
-rules, plus the official listed-words table.
+`zíze`, `(2/ze)`), and CzGram repairs them, leaving real words such as *slz* (tears) alone. AI answers get a short
+version of these rules when the gap is an s/z choice.
 
 ## Capital letters (velká písmena), experimental
 
@@ -131,7 +135,8 @@ or with "velké / malé", and single highlighted words in manual mode. Offline i
 of a sentence, days and months, languages, inhabitants and nationalities, holidays, well-known places, possessive
 adjectives from names (Karlův most) and adjectives from places (pražský). Where the meaning decides, as with
 Země (the planet) and země (soil), it says so instead of guessing. OCR often misreads these choices (`(Č/čJech`,
-`(Kik)arlův`, `Vývánoce`) and CzGram repairs them. AI answers get the same rules.
+`(Kik)arlův`, `Vývánoce`) and CzGram repairs them. AI answers get a short version of these rules when the gap is a
+capital-letter choice.
 
 ## Limits
 

@@ -76,12 +76,10 @@ class OcrRepair(unittest.TestCase):
 
 
 class AiInstructions(unittest.TestCase):
-    def test_rules_and_list_reach_the_model(self):
+    def test_s_z_rules_reach_the_model(self):
         from czgram import ai
-        text = ai.SYSTEM.format(language="English", listed=ai._listed_words())
-        self.assertIn("B: být, bydlit", text)
-        self.assertIn("Z: brzy, jazyk", text)
-        self.assertIn("vz- means upward", text)
+        _, text = ai.build({"snippet": "s/z/vz létlo", "line": "Letadlo s/z/vz létlo.", "options": []}, "en")
+        self.assertIn("vz- = upward", text)
         self.assertIn("se/ze", text)
         self.assertNotIn("{", text)
 
