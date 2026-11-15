@@ -21,7 +21,7 @@ cd packaging/arch && makepkg -si
 ```
 
 This installs the dependencies from the official repositories (including `tesseract-data-ces` for Czech).
-For answers through an Anthropic API key, also install `python-anthropic` (from the repositories or the AUR). Settings take over the PrintScreen
+For answers through an Anthropic API key, also run `sudo pacman -S python-anthropic`. Settings take over the PrintScreen
 key only on GNOME and XFCE. On KDE Plasma, Hyprland, Sway and others, add a shortcut that runs `czgram --trigger`
 yourself. Screenshots on Wayland need `xdg-desktop-portal` with your desktop's backend.
 
