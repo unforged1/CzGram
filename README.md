@@ -8,9 +8,22 @@ rule, with an animated mascot explaining it.
 
 ## Install
 
+**Debian, Ubuntu, Kali and similar:** build the package with `sh packaging/build_deb.sh`, then
+
 ```bash
-sudo apt install ./dist/czgram_1.8.0~exp1_all.deb
+sudo apt install ./dist/czgram_1.8.0_all.deb
 ```
+
+**Arch Linux, Manjaro, EndeavourOS and other Arch-based systems:** from a clone of this repository,
+
+```bash
+cd packaging/arch && makepkg -si
+```
+
+This installs the dependencies from the official repositories (including `tesseract-data-ces` for Czech).
+For answers through an Anthropic API key, also install `python-anthropic` (from the repositories or the AUR). Settings take over the PrintScreen
+key only on GNOME and XFCE. On KDE Plasma, Hyprland, Sway and others, add a shortcut that runs `czgram --trigger`
+yourself. Screenshots on Wayland need `xdg-desktop-portal` with your desktop's backend.
 
 Then open **CzGram** from the applications menu (or run `czgram`), choose your settings and press **Save**.
 
@@ -94,7 +107,7 @@ Claude Code what your plan offers, without using any quota. Lookups run at low e
 Claude Code, so it's slower and briefly uses far more memory than the offline rules. It runs with no tools, MCP
 servers or settings, in an empty folder, so text on your screen can't make it do anything except answer.
 
-**An Anthropic API key.** Billed per use from console.anthropic.com. Needs `sudo apt install python3-anthropic`.
+**An Anthropic API key.** Billed per use from console.anthropic.com. Needs `sudo apt install python3-anthropic` (on Arch: `python-anthropic`).
 If the key field is empty, the SDK's usual credentials such as `ANTHROPIC_API_KEY` are used instead.
 
 **Another provider.** Anything with an OpenAI-compatible API (`/chat/completions`, ideally `/models`), such as

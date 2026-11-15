@@ -47,7 +47,8 @@ def status():
     except (OSError, subprocess.TimeoutExpired) as e:
         return False, "Tesseract failed to start: %s" % e
     if "ces" not in (out.stdout + out.stderr).split():
-        return False, "Czech language data is missing (tesseract-ocr-ces)"
+        from .distro import pkg
+        return False, "Czech language data is missing (%s)" % pkg("tesseract-ocr-ces")
     return True, "Tesseract with Czech data is ready"
 
 

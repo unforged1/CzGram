@@ -141,7 +141,8 @@ def _send(cfg, prompt, system):
     try:
         import anthropic
     except ImportError:
-        emit(error="The Claude API needs the python3-anthropic package.")
+        from .distro import pkg
+        emit(error="The Claude API needs the %s package." % pkg("python3-anthropic"))
         return 1
 
     client = anthropic.Anthropic(api_key=cfg["api_key"]) if cfg["api_key"] else anthropic.Anthropic()

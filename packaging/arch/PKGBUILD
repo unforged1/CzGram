@@ -1,0 +1,23 @@
+# Builds CzGram from this checkout for Arch Linux and Arch-based systems (Manjaro, EndeavourOS...).
+# Usage: cd packaging/arch && makepkg -si
+pkgname=czgram
+pkgver=1.8.0
+pkgrel=1
+pkgdesc="Czech grammar lookup on the PrintScreen key"
+arch=('any')
+url="https://github.com/unforged1/CzGram"
+license=('MIT')
+depends=('python' 'tk' 'python-pillow' 'python-gobject' 'glib2' 'tesseract' 'tesseract-data-ces'
+         'libx11' 'xorg-xrandr' 'ttf-dejavu')
+makedepends=('python-pillow')
+optdepends=('xdg-desktop-portal: screenshots on Wayland'
+            'python-anthropic: answers through an Anthropic API key'
+            'xdg-utils: open links from the settings window')
+
+package() {
+    local top="$startdir/../.."
+    sh "$top/packaging/stage.sh" "$pkgdir"
+    install -Dm644 "$top/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    # Compiled here so pacman owns the cache files and removes them on uninstall.
+    python -m compileall -q -d /usr/lib/czgram "$pkgdir/usr/lib/czgram"
+}

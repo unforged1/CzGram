@@ -10,3 +10,8 @@ usage.json
 key.txt
 id_*
 .credentials.json
+
+# makepkg output
+packaging/arch/pkg/
+packaging/arch/src/
+packaging/arch/*.pkg.tar*
