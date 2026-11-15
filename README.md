@@ -9,7 +9,7 @@ rule, with an animated mascot explaining it.
 ## Install
 
 ```bash
-sudo apt install ./dist/czgram_1.7.0_all.deb
+sudo apt install ./dist/czgram_1.8.0~exp1_all.deb
 ```
 
 Then open **CzGram** from the applications menu (or run `czgram`), choose your settings and press **Save**.
@@ -123,6 +123,15 @@ prepositions s and z it reads the case from the next word's ending when the endi
 and it picks se/ze before s, š, z, ž and in set phrases like se mnou. OCR often reads these choices wrongly (`slz`,
 `zíze`, `(2/ze)`), and CzGram repairs them, leaving real words such as *slz* (tears) alone. AI answers get the same
 rules, plus the official listed-words table.
+
+## Capital letters (velká písmena), experimental
+
+CzGram recognises capital-letter exercises: choices like `(V/v)ltava` or `V/vánoce`, buttons with the two letters
+or with "velké / malé", and single highlighted words in manual mode. Offline it decides the common cases: the start
+of a sentence, days and months, languages, inhabitants and nationalities, holidays, well-known places, possessive
+adjectives from names (Karlův most) and adjectives from places (pražský). Where the meaning decides, as with
+Země (the planet) and země (soil), it says so instead of guessing. OCR often misreads these choices (`(Č/čJech`,
+`(Kik)arlův`, `Vývánoce`) and CzGram repairs them. AI answers get the same rules.
 
 ## Limits
 

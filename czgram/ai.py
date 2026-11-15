@@ -35,7 +35,12 @@ Decide by meaning, not by sound; one root can take different prefixes (sletět �
 - Prepositions: s takes the instrumental (s kým? s čím?: s kamarádem); z takes the genitive \
 (z čeho? odkud?: z lesa). Work out the case of the noun first.
 - se/ze: use the long form before words starting with s, š, z, ž and in set phrases (se sestrou, \
-ze školy, se mnou, ze mě, ze dne); otherwise s/z."""
+ze školy, se mnou, ze mě, ze dne); otherwise s/z.
+- Capital letters: capitalise sentence starts, names, inhabitants and nationalities (Čech, Pražan), \
+places (Vltava, Krkonoše), holidays (Vánoce) and the first word of institutions and works \
+(Národní divadlo); keep days, months, languages and adjectives from places lower case (pondělí, \
+čeština, pražský). A possessive adjective from a name is capitalised (Karlův most). Where meaning \
+decides (Země the planet × země soil, Vy of respect × vy), say so and use the context."""
 
 _LANG = {"en": "English", "cs": "Czech"}
 

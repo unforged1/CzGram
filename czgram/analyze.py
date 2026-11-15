@@ -7,7 +7,7 @@ only filled in where a rule actually decides the letter.
 import re
 import unicodedata
 
-from . import sz
+from . import caps, sz
 from .kb import TOPICS
 
 LETTERS = "a-zA-ZáčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ"
@@ -20,6 +20,10 @@ _BARE_OPT = r"(?:i|y|í|ý|s|z|se|ze|vz|ú|ů|mě|mně|bě|bje|vě|vje|ji|jí|mi
 _BARE_CHOICE = re.compile(r"(?<![%s/])(%s(?:/%s){1,2})(?![%s/:])"
                           % (LETTERS, _BARE_OPT, _BARE_OPT, LETTERS))
 _TOKEN = re.compile(r"[%s]+" % LETTERS)
+_UPPER_L = "A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ"
+_LOWER_L = "a-záčďéěíňóřšťúůýž"
+# V/vánoce: a capital and a small letter written in front of the rest of the word.
+_CASE_CHOICE = re.compile(r"(?<![%s/])([%s])/([%s])([%s]+)" % (LETTERS, _UPPER_L, _LOWER_L, _LOWER_L))
 # "Napište nám" (write to us) is the Umíme sites' contact button; "napište" looks like a task.
 _IGNORED = {"napiste nam"}
 _DIACRITIC = re.compile("[áčďéěíňóřšťúůýž]", re.I)
@@ -178,8 +182,12 @@ _CHOICE_TOPICS = (
 )
 
 
-def classify_choice(pre, options, suf, following=""):
-    """Topic for a choice such as b(i/y)t or (mě/mně). `following` is the text after it."""
+def classify_choice(pre, options, suf, following="", before=""):
+    """Topic for a choice such as b(i/y)t or (mě/mně). `following` is the text after it,
+    `before` the text in front of the word."""
+    if caps.is_case_pair(options):
+        case, why = caps.decide(pre + options[0].lower() + suf, before)
+        return "velka_pismena", caps.pick(case, options) if case else "", why
     low = {o.strip().lower() for o in options}
     if low & {"i", "y", "í", "ý"}:
         topic, suggest, why = classify_gap(pre, suf)
@@ -235,7 +243,14 @@ def analyze_line(line):
     for m in _CHOICE.finditer(line):
         pre, raw, suf = m.groups()
         options = [o.strip() for o in raw.split("/")]
-        topic, suggest, why = classify_choice(pre, options, suf, line[m.end():])
+        topic, suggest, why = classify_choice(pre, options, suf, line[m.end():], line[:m.start()])
+        items.append(_item("gap", m.group(0), topic, line, suggest, why))
+        seen_spans.append(m.span())
+
+    for m in _CASE_CHOICE.finditer(line):
+        if any(a <= m.start() < b for a, b in seen_spans) or m.group(1).lower() != m.group(2):
+            continue
+        topic, suggest, why = classify_choice("", [m.group(1), m.group(2)], m.group(3), "", line[:m.start()])
         items.append(_item("gap", m.group(0), topic, line, suggest, why))
         seen_spans.append(m.span())
 
@@ -335,12 +350,29 @@ def describe_exercise(question, options, lang="en", exercise="", context=""):
     """Turns a question with known answer buttons into a result item for the bar."""
     gap = _WORD_GAP.search(question)
     low = {o.strip().lower() for o in options}
-    if gap:
+    if caps.is_size_choice(options):
+        # "velké, nebo malé?": judge the gapped word, or the first word a rule can settle.
+        words = [gap.group(1) + gap.group(3)] if gap else _TOKEN.findall(question)
+        topic, suggest, why = "velka_pismena", "", None
+        found = []
+        for w in words:
+            at = question.find(w)
+            case, reason = caps.decide(w, question[:at] if at >= 0 else "")
+            if reason:
+                found.append((case, reason))
+        # Every sentence's first word is capitalised, so that's the answer only when no word
+        # has a rule of its own ("Bylo to v pondělí." asks about pondělí, not Bylo).
+        found.sort(key=lambda f: f[1][0] == "caps_start")
+        if found:
+            case, why = found[0]
+            suggest = caps.pick(case, options) if case else ""
+    elif gap:
         pre, _mark, suf = gap.groups()
         if low & {"i", "y", "í", "ý"}:
             topic, suggest, why = classify_gap(pre, suf)
         else:
-            topic, suggest, why = classify_choice(pre, options, suf, question[gap.end():])
+            topic, suggest, why = classify_choice(pre, options, suf, question[gap.end():],
+                                                  question[:gap.start()])
     else:
         topic, suggest, why = classify_choice("", options, "")
     if topic == "gap_general":
@@ -379,7 +411,12 @@ def describe_selection(text, lang="en", context="", exercise=""):
             return [_describe(item, lang) for item in found]
     topic, why, letter = "", None, ""
     if len(tokens) == 1:
-        topic, why, letter = _explain_word(tokens[0])
+        # A known capital-letter case says more than the i/y rule does: Vánoce, pondělí.
+        case, reason = caps.decide(tokens[0], "x ")
+        if reason and reason[0] != "caps_adjective":
+            topic, why = "velka_pismena", reason
+        else:
+            topic, why, letter = _explain_word(tokens[0])
     if not topic:
         topic = _match_topic(text) or _match_topic(context) or ""
     item = _item("word", text, topic, context or text, "", why)
@@ -415,12 +452,12 @@ _NO_RULE = {
 _FILL = {"cs": "Doplň: %s", "en": "Fill in: %s"}
 _BOTH = {"cs": "y, nebo i", "en": "y or i"}
 _REASONS = {
-    "cs": {**sz.REASONS["cs"], "hard": "%s je tvrdá souhláska", "soft": "%s je měkká souhláska",
+    "cs": {**sz.REASONS["cs"], **caps.REASONS["cs"], "hard": "%s je tvrdá souhláska", "soft": "%s je měkká souhláska",
            "listen": "po %s rozhoduje výslovnost", "listed": "patří k vyjmenovanému slovu (kořen %s-)",
            "prefix": "vypadá to na předponu vy-/vý-%s",
            "default": "žádné vyjmenované slovo nesedí, proto i/í%s",
            "homophone": "stejně znějí, rozhoduje význam: %s"},
-    "en": {**sz.REASONS["en"], "hard": "%s is a hard consonant", "soft": "%s is a soft consonant",
+    "en": {**sz.REASONS["en"], **caps.REASONS["en"], "hard": "%s is a hard consonant", "soft": "%s is a soft consonant",
            "listen": "after %s, the pronunciation decides", "listed": "it belongs to a listed word (root %s-)",
            "prefix": "looks like the prefix vy-/vý-%s",
            "default": "no listed word matches, so i/í is the default%s",

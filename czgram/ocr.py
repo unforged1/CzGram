@@ -88,7 +88,67 @@ _CHOICE_REPAIRS = (
 _TEARS = re.compile(r"(?:bez|plný|plné|plná|plna|mnoho|spousta|kapky|kapek|proud|potok)\s+$", re.I)
 
 
+_UP, _LO = "A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ", "a-záčďéěíňóřšťúůýž"
+_CASE_SEP = r"[/|lIíiyý1\\]"
+# (V/v), (v/V), (Kik), (pP), (Č/čJ: one letter in both cases, slash or bracket misread.
+_CASE_IN_BRACKETS = re.compile(r"\(\s*([%s%s])\s*%s?\s*([%s%s])\s*[)Jj]" % (_UP, _LO, _CASE_SEP, _UP, _LO))
+# (V/) and (/Č): one half lost.
+_CASE_HALF = re.compile(r"\(\s*(?:([%s%s])\s*/|/\s*([%s%s]))\s*\)" % (_UP, _LO, _UP, _LO))
+# V/vánoce read as Vývánoce or V|vánoce. Plain i and l stay out: they are real letters in names.
+_CASE_BARE = re.compile(r"(?<![^\W\d_])([%s])[/|íý]([%s])(?=[%s]{2})" % (_UP, _LO, _LO))
+# (V/v)Itava: a capital I read for the l that follows.
+_CASE_THEN_I = re.compile(r"(\([%s]/[%s]\)|\([%s]/[%s]\))I(?=[%s])" % (_UP, _LO, _LO, _UP, _LO))
+# (V/v)itava: a small i read for the l, too. Only fixed when that spells a known word.
+_CASE_THEN_SMALL_I = re.compile(r"(\(([%s%s])/[%s%s]\))i([%s]+)" % (_UP, _LO, _UP, _LO, _LO))
+
+
+def _l_for_i(m):
+    from .caps import decide
+    letter, rest = m.group(2).lower(), m.group(3)
+    if not decide(letter + "i" + rest, "x ")[1] and decide(letter + "l" + rest, "x ")[1]:
+        return m.group(1) + "l" + rest
+    return m.group(0)
+
+
+# "(vánocích" with no closing bracket: the whole choice was lost but the word stayed.
+_CASE_LOST = re.compile(r"\(([%s%s])([%s]{2,})" % (_UP, _LO, _LO))
+
+
+def _repair_case_choices(line):
+    def bracket(m):
+        a, b = m.group(1), m.group(2)
+        if a.lower() != b.lower() or a == b:
+            return m.group(0)
+        # With no slash or misread bracket at all, "(Vv)" is only a lost choice if the
+        # word continues straight after it, as in "(pP)ondělí"; "(Vv) model" is text.
+        plain = m.group(0).endswith(")") and not re.search(_CASE_SEP, m.group(0)[1:-1].replace(a, "", 1)
+                                                            .replace(b, "", 1))
+        after = m.string[m.end():m.end() + 1]
+        if plain and not after.isalpha():
+            return m.group(0)
+        return "(%s/%s)" % (a, b)
+    line = _CASE_IN_BRACKETS.sub(bracket, line)
+    line = _CASE_HALF.sub(lambda m: "(%s/%s)" % ((m.group(1) or m.group(2)).upper(),
+                                                 (m.group(1) or m.group(2)).lower()), line)
+    line = _CASE_BARE.sub(lambda m: "%s/%s" % (m.group(1), m.group(2)) if m.group(1).lower() == m.group(2)
+                          else m.group(0), line)
+    line = _CASE_THEN_I.sub(lambda m: m.group(1) + "l", line)
+    line = _CASE_THEN_SMALL_I.sub(_l_for_i, line)
+    if ")" not in line:
+        # A bracket can also just wrap onto the next line ("(viz obrázek"), so only rebuild
+        # the choice for a word a capital-letter rule actually covers.
+        from .caps import decide
+
+        def lost(m):
+            if not decide(m.group(1).lower() + m.group(2), "x ")[1]:
+                return m.group(0)
+            return "(%s/%s)%s" % (m.group(1).upper(), m.group(1).lower(), m.group(2))
+        line = _CASE_LOST.sub(lost, line, count=1)
+    return line
+
+
 def repair_choices(line):
+    line = _repair_case_choices(line)
     for pattern, fixed in _CHOICE_REPAIRS:
         def swap(m, fixed=fixed):
             if fixed == "s/z" and m.group(0) == "slz" and _TEARS.search(line[:m.start()]):

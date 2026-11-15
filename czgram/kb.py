@@ -195,15 +195,18 @@ TOPICS = {
        "sebou = a movement of the body, reflexive instrumental: trhnout sebou, praštit sebou.",
 },
 "velka_pismena": {
- "keys": ["pismen", "pismeno"],
+ "keys": ["pismen", "pismeno", "velk pism", "mal pism", "velka pismena", "mala pismena"],
  "title": {"cs": "Velká písmena", "en": "Capital letters"},
- "cs": "Velké písmeno: začátek věty, vlastní jména (Karel, Praha, Vltava), obyvatelé (Čech, Pražan), názvy institucí a svátků (Vánoce, Karlova univerzita).\n"
-       "Malé: jazyky (čeština), dny a měsíce (pondělí, leden), přídavná jména (český).\n"
-       "Ulice a náměstí: Na Příkopě, Václavské náměstí, ulice Dlouhá.",
- "en": "Capitalise: sentence starts, proper names (Karel, Praha, Vltava), inhabitants (Čech, Pražan), institutions and holidays (Vánoce, Karlova univerzita).\n"
-       "Lower case: languages (čeština), days and months (pondělí, leden), adjectives (český).\n"
-       "Streets and squares: Na Příkopě, Václavské náměstí, ulice Dlouhá.",
+ "cs": "Velké písmeno: začátek věty, jména osob a zvířat (Karel, Alík), obyvatelé a národy (Čech, Pražan), zeměpisná jména (Praha, Vltava, Krkonoše), svátky (Vánoce, Velikonoce), názvy institucí a děl (první slovo: Národní divadlo, Malý princ).\n"
+       "Malé písmeno: dny a měsíce (pondělí, leden), jazyky (čeština), přídavná jména od míst (pražský, český).\n"
+       "Víceslovná jména: Česká republika, Václavské náměstí, Na Příkopě, Karlův most (přivlastňovací přídavné jméno od jména je velké).\n"
+       "Podle významu: Země (planeta) × země (půda), Slunce × slunce, Vy (z úcty v dopise) × vy.",
+ "en": "Capitalise: sentence starts, names of people and animals (Karel, Alík), inhabitants and nationalities (Čech, Pražan), places (Praha, Vltava, Krkonoše), holidays (Vánoce, Velikonoce), and the first word of institutions and works (Národní divadlo, Malý princ).\n"
+       "Lower case: days and months (pondělí, leden), languages (čeština), adjectives from places (pražský, český).\n"
+       "Multi-word names: Česká republika, Václavské náměstí, Na Příkopě, Karlův most (a possessive adjective from a name is capitalised).\n"
+       "By meaning: Země (the planet) × země (soil), Slunce × slunce, Vy (respect, in letters) × vy.",
 },
+
 "carky": {
  "keys": ["cark", "interpunkc", "oddel"],
  "title": {"cs": "Čárky ve větě", "en": "Commas"},
