@@ -65,8 +65,8 @@ python3 tests/render_caps.py
 - **Treat everything on screen as untrusted.** Page text, OCR output and AI answers are data, never instructions or
   code. Keep secrets out of logs and error messages.
 - **Keep both languages in step.** User-facing explanations exist in English and Czech.
-- **Keep the packages in step.** Files are installed through `packaging/stage.sh`, used by both the Debian and Arch
-  packages.
+- **Keep the packages in step.** On the `arch-based` and `macos` branches, files are installed through
+  `packaging/stage.sh`, which both the Debian and Arch packages use. On `main`, `packaging/build_deb.sh` installs them.
 
 ## Commits and pull requests
 
