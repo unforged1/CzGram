@@ -3,6 +3,11 @@ name: macOS
 on:
   push:
     branches: [macos]
+    paths-ignore:   # docs and community files don't need a Mac
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
   workflow_dispatch:
 
 permissions:
