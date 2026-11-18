@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.8.0-D97757?style=for-the-badge" alt="Version 1.8.0">
+  <img src="https://img.shields.io/badge/version-1.9.0-D97757?style=for-the-badge" alt="Version 1.9.0">
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
   <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
@@ -69,7 +69,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_1.8.0_all.deb
+sudo apt install ./dist/czgram_1.9.0_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
