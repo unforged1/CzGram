@@ -5,6 +5,9 @@ on:
     branches: [macos]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   macos:
     runs-on: macos-latest   # Apple silicon

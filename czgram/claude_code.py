@@ -146,6 +146,9 @@ def run(prompt, system, emit, model="default"):
            "--effort", "low", "--tools", "", "--strict-mcp-config", "--setting-sources", "",
            "--disable-slash-commands", "--no-session-persistence", "--system-prompt", system]
     if model and model != "default":
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:\[\]-]*", model):
+            emit(error="The model name %r isn't valid. Choose one in Settings." % model[:40])
+            return
         cmd += ["--model", model]
     with tempfile.TemporaryDirectory(prefix="czgram-") as empty:
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,

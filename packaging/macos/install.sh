@@ -18,8 +18,14 @@ PY="$BREW/bin/python3"
 TESSDATA="$BREW/share/tessdata"
 if ! "$BREW/bin/tesseract" --list-langs 2>/dev/null | grep -qx ces; then
     echo "==> Downloading Czech data for Tesseract"
-    curl -fL --retry 3 -o "$TESSDATA/ces.traineddata.part" \
-        https://github.com/tesseract-ocr/tessdata_fast/raw/main/ces.traineddata
+    # Pinned to one commit and checked against its Git hash, so the file can't change under us.
+    curl -fL --proto '=https' --retry 3 -o "$TESSDATA/ces.traineddata.part" \
+        https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/923915d4ced2a7235221788285785a29c4a42d4a/ces.traineddata
+    if [ "$(git hash-object "$TESSDATA/ces.traineddata.part")" != dd6fc79a62f9fcd1c7c6da06b31bb4fdb10dc173 ]; then
+        rm -f "$TESSDATA/ces.traineddata.part"
+        echo "The Czech data didn't match its expected hash; not installed." >&2
+        exit 1
+    fi
     mv "$TESSDATA/ces.traineddata.part" "$TESSDATA/ces.traineddata"
 fi
 

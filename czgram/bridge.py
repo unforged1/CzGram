@@ -7,6 +7,9 @@ import socket
 from . import config
 
 
+MAX_REPLY = 8 * 1024 * 1024
+
+
 class BridgeResult:
     __slots__ = ("lines", "url", "title", "error")
 
@@ -20,11 +23,14 @@ def _ask(path, timeout):
     try:
         s.connect(path)
         s.sendall(b"snapshot\n")
-        chunks = []
+        chunks, size = [], 0
         while True:
             c = s.recv(65536)
             if not c:
                 break
+            size += len(c)
+            if size > MAX_REPLY:
+                raise ValueError("the page is too large to read")
             chunks.append(c)
     finally:
         s.close()

@@ -50,6 +50,11 @@ def _gnome_set(schema, key, values):
     return _run("gsettings", "set", schema, key, json.dumps(values).replace('"', "'"))
 
 
+def _gvariant_str(text):
+    """A GVariant string literal: a quote in a path mustn't end the string early."""
+    return "'%s'" % text.replace("\\", "\\\\").replace("'", "\\'")
+
+
 def _custom_set(key, value):
     return _run("gsettings", "set", "%s:%s" % (_CUSTOM_SCHEMA, _CUSTOM_PATH), key, value)
 
@@ -98,7 +103,7 @@ def _bind_gnome(command):
     if _CUSTOM_PATH not in paths:
         _gnome_set(_MEDIA, "custom-keybindings", paths + [_CUSTOM_PATH])
     _custom_set("name", "'CzGram'")
-    _custom_set("command", "'%s'" % command)
+    _custom_set("command", _gvariant_str(command))
     res = _custom_set("binding", "'Print'")
     if res.returncode != 0:
         return False, "could not set the shortcut: " + res.stderr.strip()

@@ -128,7 +128,10 @@ def _capture_portal():
     if parts[0] != "0" or len(parts) < 2:
         raise CaptureError("screenshot was denied or cancelled")
     from urllib.parse import unquote, urlparse
-    path = unquote(urlparse(parts[1]).path)
+    uri = urlparse(parts[1])
+    path = unquote(uri.path)
+    if uri.scheme != "file" or not _own_regular_file(path):
+        raise CaptureError("the screenshot portal returned an unexpected file")
     try:
         return _png_to_pgm(path)
     finally:
@@ -136,6 +139,16 @@ def _capture_portal():
             os.unlink(path)
         except OSError:
             pass
+
+
+def _own_regular_file(path):
+    """A plain file of ours, not a link, so cleaning up can't delete anything else."""
+    import stat
+    try:
+        st = os.lstat(path)
+    except OSError:
+        return False
+    return stat.S_ISREG(st.st_mode) and st.st_uid == os.getuid()
 
 
 def _png_to_pgm(path):

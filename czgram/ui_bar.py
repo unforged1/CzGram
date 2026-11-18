@@ -545,8 +545,11 @@ class Bar:
         except OSError:
             pass
         self.srv = socket.socket(socket.AF_UNIX)
-        self.srv.bind(path)
-        os.chmod(path, 0o600)
+        old = os.umask(0o077)  # private from the moment it exists
+        try:
+            self.srv.bind(path)
+        finally:
+            os.umask(old)
         self.srv.listen(4)
         self.root.createfilehandler(self.srv.fileno(), tk.READABLE, self._on_command)
 

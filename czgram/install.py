@@ -1,6 +1,7 @@
 """Per-user setup applied when settings are saved: shortcut, hotkey service, browser host."""
 import json
 import os
+import shlex
 import shutil
 import stat
 import subprocess
@@ -26,8 +27,9 @@ def _command():
     """How the desktop shortcut should run us: the installed command, or this source tree."""
     exe = shutil.which("czgram")
     if exe:
-        return exe + " --trigger"
-    return "env PYTHONPATH=%s %s -m czgram --trigger" % (os.path.dirname(HERE), sys.executable)
+        return shlex.quote(exe) + " --trigger"
+    return "env %s %s -m czgram --trigger" % (shlex.quote("PYTHONPATH=" + os.path.dirname(HERE)),
+                                              shlex.quote(sys.executable))
 
 
 def native_host_dirs():

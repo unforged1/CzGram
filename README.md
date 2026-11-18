@@ -202,7 +202,8 @@ Reading HTML needs a small extension, added once. The app's settings can open it
   Firefox removes temporary add-ons when it restarts; a permanent install requires signing the add-on.
 
 The extension acts only when CzGram asks, reads only the active tab's visible content, and sends it only to the local app.
-It does need permission to read all sites to be able to do that.
+It does need permission to read all sites to be able to do that. It never reads password, card, one-time-code or hidden
+fields, and it sends at most 1 MB per page.
 
 ## 🤖 AI answers: three ways to connect
 
