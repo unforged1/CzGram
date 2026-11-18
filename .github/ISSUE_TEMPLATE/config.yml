@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/unforged1/CzGram/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
+  - name: Install instructions
+    url: https://github.com/unforged1/CzGram#-install
+    about: How to install on Debian, Arch and macOS.

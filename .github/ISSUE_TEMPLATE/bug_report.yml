@@ -1,0 +1,72 @@
+name: Bug report
+description: Something doesn't work or gives a wrong answer.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Never paste API keys, tokens or your `config.json`.**
+        For security problems, use the [security policy](https://github.com/unforged1/CzGram/blob/main/SECURITY.md) instead.
+  - type: input
+    id: version
+    attributes:
+      label: CzGram version
+      description: The output of `czgram --version`.
+      placeholder: czgram 1.9.0
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options:
+        - Debian, Ubuntu, Kali or similar
+        - Arch, Manjaro, EndeavourOS or similar
+        - macOS
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop and session
+      placeholder: GNOME on Wayland, KDE on X11, macOS 15...
+  - type: dropdown
+    id: detection
+    attributes:
+      label: Detection mode
+      options:
+        - Screenshot (OCR)
+        - Page code (HTML)
+        - Selected word (manual)
+        - Quick mode
+        - Not about detection
+  - type: dropdown
+    id: ai
+    attributes:
+      label: AI answers
+      options:
+        - "Off"
+        - Claude plan (Claude Code)
+        - Anthropic API key
+        - Another provider
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what the bar or settings window showed.
+    validations:
+      required: true
+  - type: textarea
+    id: exercise
+    attributes:
+      label: The exercise text
+      description: For a wrong answer or a missed gap, the line as it appears on screen, for example `Vrátil se (z/ze) školy.`
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Press PrintScreen
+        3. ...
