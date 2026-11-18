@@ -1,5 +1,4 @@
 """End-to-end checks for macOS CI: OCR on a rendered exercise, the hotkeys, and the settings window."""
-import os
 import sys
 
 from PIL import Image, ImageDraw, ImageFont
