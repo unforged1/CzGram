@@ -11,10 +11,14 @@ from . import caps, sz
 from .kb import TOPICS
 
 LETTERS = "a-zA-ZáčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ"
+MAX_LINE = 2000
 _GAP = r"_+|…+|\.{3,}|—{2,}|-{3,}"
 _WORD_GAP = re.compile(r"(?<![%s\d_.:/])([%s]*)(%s)([%s]*)(?![\d_/])" % (LETTERS, LETTERS, _GAP, LETTERS))
 _OPT = r"[%s]{1,12}(?: [%s]{1,8})?" % (LETTERS, LETTERS)
-_CHOICE = re.compile(r"([%s]*)[(\[]\s*(%s(?:\s*/\s*%s)+)\s*[)\]]([%s]*)" % (LETTERS, _OPT, _OPT, LETTERS))
+# The look-behind makes a match start at a word's beginning: without it, a long run of letters
+# is rescanned from every position, which a web page could use to stall the app.
+_CHOICE = re.compile(r"(?<![%s])([%s]*)[(\[]\s*(%s(?:\s*/\s*%s)+)\s*[)\]]([%s]*)"
+                     % (LETTERS, LETTERS, _OPT, _OPT, LETTERS))
 _BARE_OPT = r"(?:i|y|í|ý|s|z|se|ze|vz|ú|ů|mě|mně|bě|bje|vě|vje|ji|jí|mi|my)"
 # Two or three options, e.g. s/z, z/ze or s/z/vz, written without brackets.
 _BARE_CHOICE = re.compile(r"(?<![%s/])(%s(?:/%s){1,2})(?![%s/:])"
@@ -320,6 +324,9 @@ def analyze(lines, lang="en", limit=8):
         line = " ".join(raw.split())
         if len(line) < 3:
             continue
+        if len(line) > MAX_LINE:
+            # Exercises are short; a huge line is page text, and could be slow to search.
+            line = line[:MAX_LINE].rsplit(" ", 1)[0]
         for item in analyze_line(line):
             key = strip(item["snippet"])
             if key in seen:

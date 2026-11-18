@@ -16,6 +16,9 @@ import sys
 import tempfile
 
 
+MAX_MESSAGE = 8 * 1024 * 1024  # the extension sends at most about 1 MB
+
+
 def runtime_dir():
     base = os.environ.get("XDG_RUNTIME_DIR")
     path = os.path.join(base, "czgram") if base else os.path.join(
@@ -41,7 +44,10 @@ def read_message(fd):
     head = read_exact(fd, 4)
     if head is None:
         return None
-    body = read_exact(fd, struct.unpack("=I", head)[0])
+    size = struct.unpack("=I", head)[0]
+    if size > MAX_MESSAGE:
+        return None  # treat as a broken port rather than buffer it
+    body = read_exact(fd, size)
     return None if body is None else json.loads(body.decode("utf-8"))
 
 
@@ -54,8 +60,11 @@ def main():
     stdin, stdout = sys.stdin.fileno(), sys.stdout.fileno()
     path = os.path.join(runtime_dir(), "bridge-%d.sock" % os.getpid())
     srv = socket.socket(socket.AF_UNIX)
-    srv.bind(path)
-    os.chmod(path, 0o600)
+    old = os.umask(0o077)  # private from the moment it exists
+    try:
+        srv.bind(path)
+    finally:
+        os.umask(old)
     srv.listen(4)
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     next_id = 0

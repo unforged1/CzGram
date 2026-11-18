@@ -2,6 +2,8 @@
 // (PrintScreen pressed); it sends nothing anywhere except the local app.
 const api = globalThis.browser || globalThis.chrome;
 const HOST = "cz.czgram.bridge";
+const MAX_FRAMES = 20;
+const MAX_TOTAL = 1000000;
 let port = null;
 
 // Runs inside the page. Emits simplified HTML of what's in view, using live form
@@ -12,6 +14,12 @@ function pageSnapshot() {
   const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const attr = (s) => esc(s).replace(/"/g, "&quot;");
   const vh = window.innerHeight, vw = window.innerWidth;
+  // Exercises are plain text boxes. Never copy what could be a secret: passwords, card
+  // details, one-time codes, hidden values, or anything the page marks as such.
+  const TEXT_TYPES = new Set(["text", "search", ""]);
+  const SECRET = /passw|passcode|cc-|card.?(num|no\b|code|cvc)|cvc|cvv|csc|iban|one-time|(^|[^a-z])(otp|pin|ssn)([^a-z]|$)|secret|token/i;
+  const secretField = (el) => !TEXT_TYPES.has((el.type || "").toLowerCase())
+    || SECRET.test([el.autocomplete, el.name, el.id].join(" "));
   let out = "";
 
   // Whatever is highlighted here, with its sentence, for the app's manual mode.
@@ -19,6 +27,7 @@ function pageSnapshot() {
     const active = document.activeElement;
     let text = "", context = "";
     if (active && typeof active.selectionStart === "number" && active.selectionEnd > active.selectionStart) {
+      if (active.tagName === "INPUT" && secretField(active)) return "";
       text = active.value.slice(active.selectionStart, active.selectionEnd);
       context = active.value;
     } else {
@@ -47,10 +56,14 @@ function pageSnapshot() {
     if (sized && (r.bottom < 0 || r.top > vh || r.right < 0 || r.left > vw)) return;
     const name = tag.toLowerCase();
     if (tag === "INPUT") {
+      if (secretField(node)) return;
       out += `<input type="${attr(node.type || "text")}" value="${attr(node.value || "")}">`;
       return;
     }
-    if (tag === "TEXTAREA") { out += `<textarea>${esc(node.value || "")}</textarea>`; return; }
+    if (tag === "TEXTAREA") {
+      if (!SECRET.test([node.autocomplete, node.name, node.id].join(" "))) out += `<textarea>${esc(node.value || "")}</textarea>`;
+      return;
+    }
     if (tag === "SELECT") {
       out += "<select>";
       for (const o of node.options) out += `<option>${esc(o.text)}</option>`;
@@ -97,11 +110,20 @@ async function takeSnapshot() {
   } catch (e) {
     return { error: "this page can't be read (" + e.message + ")" };
   }
+  // A page with many frames mustn't flood the app: keep the first ones, up to 1 MB in all.
+  const kept = [];
+  let total = 0;
+  for (const f of frames || []) {
+    if (typeof f !== "string" || !f.length || kept.length >= MAX_FRAMES) continue;
+    if (total + f.length > MAX_TOTAL) break;
+    kept.push(f);
+    total += f.length;
+  }
   return {
     focused: !!win.focused,
     url: tab.url || "",
-    title: tab.title || "",
-    frames: (frames || []).filter((f) => typeof f === "string" && f.length),
+    title: (tab.title || "").slice(0, 300),
+    frames: kept,
   };
 }
 
