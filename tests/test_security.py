@@ -1,6 +1,4 @@
 """Hardening found in the security review: each test pins one fix."""
-import io
-import json
 import os
 import socket
 import stat
