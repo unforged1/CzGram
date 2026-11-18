@@ -1,0 +1,28 @@
+name: Wrong or missing grammar rule
+description: The offline rules give a wrong suggestion, or a topic isn't covered.
+labels: [grammar]
+body:
+  - type: textarea
+    id: line
+    attributes:
+      label: The exercise line
+      placeholder: "Musíme (s/z)míchat těsto."
+    validations:
+      required: true
+  - type: input
+    id: got
+    attributes:
+      label: What CzGram suggested
+      placeholder: z
+  - type: input
+    id: expected
+    attributes:
+      label: The correct answer
+      placeholder: s
+    validations:
+      required: true
+  - type: textarea
+    id: rule
+    attributes:
+      label: The rule, with a source
+      description: For example a link to the Internetová jazyková příručka (prirucka.ujc.cas.cz).

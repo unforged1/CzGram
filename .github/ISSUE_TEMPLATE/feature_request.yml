@@ -1,0 +1,28 @@
+name: Feature request
+description: An idea for CzGram.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: CzGram reads and explains, and never clicks or submits answers for you. Requests for auto-solving won't be accepted.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would it help with?
+      description: The situation or exercise type, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you'd like
+  - type: dropdown
+    id: system
+    attributes:
+      label: Which systems
+      multiple: true
+      options:
+        - Debian-based
+        - Arch-based
+        - macOS
+        - All
