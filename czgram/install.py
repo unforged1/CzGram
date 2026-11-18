@@ -7,7 +7,7 @@ import stat
 import subprocess
 import sys
 
-from . import config, shortcuts
+from . import shortcuts
 from .extension_id import CHROMIUM_ID, FIREFOX_ID
 
 HOST_NAME = "cz.czgram.bridge"
