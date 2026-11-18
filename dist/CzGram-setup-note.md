@@ -1,4 +1,4 @@
-# CzGram 1.7.0: setup note
+# CzGram 1.9.0: setup note
 
 CzGram is a Czech grammar helper. Press PrintScreen while solving an exercise, and a small bar at the top of the screen shows the rule for what it finds. It can also suggest an answer.
 
@@ -15,7 +15,7 @@ This is an early test version. It has only been tested on one computer (Kali Lin
 Open a terminal in the folder holding the file, then run:
 
 ```bash
-sudo apt install ./czgram_1.7.0_all.deb
+sudo apt install ./czgram_1.9.0_all.deb
 ```
 
 Open **CzGram** from your applications menu, choose your settings and press **Save**.
