@@ -9,7 +9,7 @@ rule, with an animated mascot explaining it.
 ## Install
 
 ```bash
-sudo apt install ./dist/czgram_1.8.0~exp1_all.deb
+sudo apt install ./dist/czgram_1.9.0_all.deb
 ```
 
 Then open **CzGram** from the applications menu (or run `czgram`), choose your settings and press **Save**.
