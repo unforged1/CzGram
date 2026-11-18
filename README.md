@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
   <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
+  <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
   <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
 </p>
 
@@ -33,6 +34,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | 🤖 **AI answers** | Optional. Your Claude plan, an Anthropic key, or another provider, at about 960 input tokens per lookup. |
 | 🔥 **Speed mode** | With Opus or Fable the bar turns blue and the mascot catches fire and runs. |
 | 🔢 **Token tracking** | See what CzGram's Claude lookups have used today, this week and overall. |
+| 🛡️ **Security reviewed** | Keys stay private, secret form fields are never read, and web pages can't stall it. [Details](#security) |
 
 ## 🐧 Supported systems
 
@@ -203,7 +205,7 @@ Reading HTML needs a small extension, added once. The app's settings can open it
 
 The extension acts only when CzGram asks, reads only the active tab's visible content, and sends it only to the local app.
 It does need permission to read all sites to be able to do that. It never reads password, card, one-time-code or hidden
-fields, and it sends at most 1 MB per page.
+fields, and it sends at most 1 MB per page. See [Security](#security).
 
 ## 🤖 AI answers: three ways to connect
 
@@ -279,6 +281,47 @@ capital-letter choice.
 Offline by default: screenshots stay in memory and aren't saved. (The Wayland portal writes a file,
 which is deleted immediately.) If you turn on AI answers, the recognised text of each item you view is sent
 to the service you chose. Only that text is sent, never the image.
+
+<a id="security"></a>
+
+## 🛡️ Security
+
+CzGram reads your screen and, if you add the connector, your browser tab, so it's built to keep that
+data on your computer and out of reach of web pages.
+
+| Area | How it's protected |
+| --- | --- |
+| 🔑 API keys | Stored in `~/.config/czgram/config.json`, readable only by you, masked in settings and never logged. |
+| 🤖 Claude Code | Runs with no tools, no MCP servers, no settings and no API key from your environment, in an empty folder. Text on screen can only change the answer, never make it act. |
+| 🌐 Other AI providers | Redirects are refused, so your key is never resent to another address. Unencrypted `http://` addresses off your computer get a warning. |
+| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. |
+| 🔌 Local sockets | Private to your user from the moment they're created, inside a folder only you can open. Oversized messages are refused. |
+| ⏱️ Page text | Long or crafted lines can't stall the analyzer: patterns run in linear time and lines are capped at 2,000 characters. |
+| 📦 Installers | The macOS installer downloads the Czech OCR data from a pinned commit and checks its hash before using it. |
+
+<details>
+<summary><b>Security review, November 2026</b>: what was fixed</summary>
+
+A full review of the app, the browser extension, the installers and the repository history. No keys, tokens or
+personal settings were ever committed. The fixes are on every branch:
+
+| Severity | Issue | Fix |
+| --- | --- | --- |
+| 🔴 High | The page snapshot included the value of every input, so password and card fields could reach any program running as you that asked the connector. | Secret-looking fields are skipped (extension 1.4.0). |
+| 🟠 Medium | A page with one very long line could make the analyzer work for over 20 seconds, twice a second in quick mode. | The choice pattern is anchored to word starts; lines are capped. |
+| 🟠 Medium | A page with hundreds of frames could send hundreds of megabytes to the app. | 20 frames and 1 MB per page; both ends refuse messages over 8 MB. |
+| 🟡 Low | Sockets were made private just after creation, not at creation. | Created private with a restrictive umask. |
+| 🟡 Low | A model name starting with `-` would be read as a Claude Code option. | Model names are validated. |
+| 🟡 Low | A path with a quote or space could break the GNOME, XFCE or autostart shortcut. | Paths are quoted properly. |
+| 🟡 Low | Cleaning up a Wayland screenshot trusted the path it was given. | Only a regular file you own is deleted, never a link. |
+| 🟡 Low | The macOS installer took the OCR data from a moving branch. | Pinned to a commit and hash-checked. |
+
+**After updating, reload the browser extension** (Reload in `chrome://extensions`, or load it again in Firefox),
+because the password-field fix lives in the extension.
+</details>
+
+Found a problem? Open an issue on GitHub. For anything sensitive, contact the maintainer through GitHub first
+instead of posting details publicly.
 
 ## ⚠️ Limits
 
