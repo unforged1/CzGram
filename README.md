@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.9.0-D97757?style=for-the-badge" alt="Version 1.9.0">
+  <img src="https://img.shields.io/badge/version-2.0.0~exp-D97757?style=for-the-badge" alt="Version 2.0.0~exp">
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
   <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
@@ -30,6 +30,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | 🌐 **Page reading** | Reads the browser tab's HTML directly, with automatic fallback either way. |
 | 🖱️ **Manual mode** | Highlight any word and press PrintScreen to get the rule behind it. |
 | ⚡ **Quick mode** | Watches the page and answers each new question as it appears. It never clicks for you. |
+| 💻 **Bulk mode** (new) | A whole set of questions on one page? Double-tap Alt: one request answers them all, and each answer appears as you answer the one before. |
 | 📚 **Offline rules** | Listed words (vyjmenovaná slova), hard/soft consonants, s/z/vz, z/ze, s/se, capital letters and more. |
 | 🤖 **AI answers** | Optional. Your Claude plan, an Anthropic key, or another provider, at about 960 input tokens per lookup. |
 | 🔥 **Speed mode** | With Opus or Fable the bar turns blue and the mascot catches fire and runs. |
@@ -69,7 +70,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_1.9.0_all.deb
+sudo apt install ./dist/czgram_2.0.0~exp_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
@@ -165,6 +166,33 @@ Choose **Selected word (manual)** in settings, highlight a word with the mouse i
 explains that word, or the whole line if you highlight an exercise line with a gap. No screenshot is taken. In the browser,
 with the connector active, it also reads the sentence around the word and gives it to the AI for context. Manual
 detection turns quick mode off. Like all AI answers, the highlighted text and sentence go to the service you chose.
+</details>
+
+<details open>
+<summary><b>💻 Bulk mode</b> (new in 2.0, experimental): a whole page of questions in one request</summary>
+
+When CzGram reads a tab in page-code mode, it reads the whole page, including what's scrolled out of view. If the
+page holds a set of two or more questions, such as a worksheet or a form, the bar offers bulk mode:
+
+> ⚡ 6 questions on this page. Double-tap Alt to answer them all at once (bulk mode).
+
+Double-tap **Alt** in the browser to accept. CzGram sends every question in **one request** and shows the answers one
+at a time, starting with the first. **Answer it on the page and the next answer appears by itself**, with no further
+requests. ◀ ▶ let you look ahead or back without changing your place. The mascot sits at its laptop and types flat
+out while bulk mode is on.
+
+- It works in quick mode, and after a PrintScreen scan in page-code mode (the offer then stays open for 45 seconds).
+- It applies to that set only. It ends after the last question, or when you leave the page, and quick mode carries
+  on without re-answering what bulk mode covered.
+- Answers count when you click an answer (a button, option, radio or checkbox) or finish typing in a gap (Enter or
+  leaving the box). Clicking blank space, scrolling or pressing other keys doesn't move it on.
+- With AI answers off, bulk mode shows the offline rules' suggestions instead.
+- A single request is cheaper than one per question: a 6-question test sheet took 1.7k tokens in total, against
+  about 1k for each separate lookup.
+- Like the rest of CzGram, it never clicks or types on the page.
+
+After installing 2.0, reload the browser extension (version 2.0.0), which adds whole-page reading and the Alt and
+answer counting.
 </details>
 
 <details>
@@ -330,6 +358,9 @@ instead of posting details publicly.
 - The offline listed-words check covers common roots and can miss rare relatives.
 - OCR reads the whole screen on Wayland, so other Czech text on screen can show up as items.
 - The bar is an X11 window, shown through XWayland on Wayland.
+- Bulk mode follows your answers by counting clicks, so it can get out of step if a page has extra buttons inside
+  the set, or if a gap isn't recognised. ◀ ▶ get you back to the right answer. It's tested in Chromium; in Firefox
+  the double tap should work too, but hasn't been tested yet.
 - On macOS, the bar and settings window show a Python icon in the Dock while open, and manual mode replaces
   a non-text clipboard (such as a copied image) when it copies your selection.
 

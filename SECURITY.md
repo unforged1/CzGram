@@ -7,6 +7,7 @@ thank you for reporting them responsibly.
 
 | Version | Supported |
 | --- | --- |
+| 2.0.0~exp (`experimental` branch) | ✅ Security fixes |
 | 1.9.x | ✅ Security fixes |
 | 1.8.x and older | ❌ Update to 1.9 |
 

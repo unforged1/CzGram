@@ -72,6 +72,8 @@ class Bar:
         self.cfg = config.load()
         self.items, self.index = [], 0
         self.scan = self.ai = self.watch = None
+        self.watch_offer_only = False
+        self.bulk = None       # bulk mode: {"items", "answers": {n: text}, "index", "done"}
         self.pending = ""      # text still to be "spoken"
         self.ai_cache = {}
         self.ai_started = False
@@ -126,6 +128,8 @@ class Bar:
         self.text.configure(state="disabled")
         self.text.bind("<Button-1>", lambda _e: self.finish_speaking())
         self.notice = tk.Label(outer, bg=BG, fg=MUTED, font=(FONT, 8), anchor="w", justify="left")
+        # Its own line, so token counts and sources never hide the bulk-mode offer.
+        self.offer = tk.Label(outer, bg=BG, fg=HINT, font=(FONT, 9, "bold"), anchor="w", justify="left")
         self.root.bind("<Escape>", lambda _e: self.dismiss())
 
     def _button(self, parent, text, command):
@@ -176,7 +180,7 @@ class Bar:
             self.mascot.set_running(new is THEME_SPEED)
 
     def _fast_text(self):
-        return self.watch is not None or self.colors is THEME_SPEED
+        return self.watch is not None or self.colors is THEME_SPEED or self.bulk is not None
 
     def _width(self):
         return min(760, int(self._screen()[2] * 0.8))
@@ -213,6 +217,7 @@ class Bar:
         for label in (self.title, self.snippet, self.hint):
             label.configure(wraplength=wrap)
         self.notice.configure(wraplength=w - 20)
+        self.offer.configure(wraplength=w - 20)
         self.root.update_idletasks()
         h = self.root.winfo_reqheight()
         self.root.geometry("%dx%d+%d+%d" % (w, h, x0 + (sw - w) // 2, y0))
@@ -264,6 +269,12 @@ class Bar:
             self.root.update()
         elif event == "result":
             self.show_result(msg)
+            gaps = [i for i in msg.get("items", []) if i.get("kind") == "gap"]
+            if msg.get("source") == "page code" and len(gaps) >= 2 and self.watch is None:
+                # The tab may hold a whole set: let the watcher offer bulk mode for it.
+                self.watch_offer_only = True
+                self.watch = Child(self.root, ["czgram.watch", "--offer"], self._on_watch_message,
+                                   self._on_watch_exit)
 
     def _on_scan_exit(self):
         self.scan = None
@@ -280,11 +291,16 @@ class Bar:
             self.mascot.rest = "busy"
             self.mascot.set_state("busy")
         self._place()
+        self.watch_offer_only = False
         self.watch = Child(self.root, ["czgram.watch"], self._on_watch_message, self._on_watch_exit)
 
     def _on_watch_message(self, msg):
-        if msg.get("event") == "result":
-            self.show_result(msg)
+        event = msg.get("event", "")
+        if event.startswith("bulk"):
+            self._on_bulk_event(msg)
+        elif msg.get("event") == "result":
+            if self.bulk is None:
+                self.show_result(msg)
         elif msg.get("event") == "status":
             text = msg.get("message", "")
             if text.startswith("Waiting"):
@@ -295,6 +311,13 @@ class Bar:
 
     def _on_watch_exit(self):
         self.watch = None
+        if self.watch_offer_only:
+            # An offer after a PrintScreen scan simply lapses; that's not a failure.
+            self.watch_offer_only = False
+            if self.bulk is not None:
+                self._end_bulk("")
+            self._set_offer("")
+            return
         if self.visible:
             self._set_notice("Quick mode stopped unexpectedly. Press PrintScreen to start it again.")
             if self.mascot:
@@ -303,11 +326,136 @@ class Bar:
             self._place()
 
     def _stop_watch(self):
+        self._set_offer("")
+        self.watch_offer_only = False
+        self.bulk = None
         if self.watch is not None:
             self.watch.close()
             self.watch = None
         if self.mascot:
             self.mascot.rest = "idle"
+
+    # ---------------------------------------------------------- bulk mode
+
+    def _on_bulk_event(self, msg):
+        event = msg["event"]
+        if event == "bulk_offer":
+            if not self.visible:
+                self.show()
+            self._set_offer("⚡ %d questions on this page. Double-tap Alt to answer them all at once (bulk mode)."
+                            % msg["count"])
+        elif event == "bulk_offer_end":
+            self._set_offer("")
+        elif event == "bulk_on":
+            self._start_bulk(msg["items"], msg.get("title", ""))
+        elif event == "bulk_next" and self.bulk is not None:
+            self.bulk["index"] = msg["index"]
+            self.show_bulk()
+        elif event == "bulk_end":
+            self._end_bulk(msg.get("reason", ""))
+
+    def _set_offer(self, text):
+        self.offer.pack_forget()
+        if text:
+            self.offer.configure(text=text)
+            self.offer.pack(fill="x", padx=10, pady=(2, 4))
+        if self.visible:
+            self._place()
+
+    def _start_bulk(self, items, title):
+        self._set_offer("")
+        self._stop_ai()
+        self.bulk = {"items": items, "answers": {}, "index": 0, "done": False}
+        self.items = []
+        self._ensure_mascot()
+        if not self.visible:
+            self.show()
+        if self.mascot:
+            self.mascot.rest = "laptop"
+            self.mascot.set_state("laptop")
+        how = "one request for all %d" if self.cfg["use_claude"] else "offline answers for all %d"
+        self.notice_base = ("Bulk mode: " + how + " · answer on the page and the next one follows") % len(items)
+        self._set_notice(self.notice_base)
+        if self.cfg["use_claude"]:
+            payload = json.dumps({"bulk": [{k: i.get(k, "") for k in ("snippet", "line", "options", "context")}
+                                           for i in items], "exercise": title}).encode()
+            self.ai = Child(self.root, ["czgram.ai"], self._on_bulk_ai, self._on_bulk_ai_exit, payload)
+        else:
+            # Without AI answers, each item's offline suggestion is all there is.
+            for n, item in enumerate(items, 1):
+                self.bulk["answers"][n] = _offline_answer(item)
+            self.bulk["done"] = True
+        self.show_bulk()
+
+    def _on_bulk_ai(self, msg):
+        if self.bulk is None:
+            return
+        if "answer" in msg:
+            self.bulk["answers"].setdefault(msg["answer"], msg["text"])
+            if msg["answer"] == self.bulk["index"] + 1:
+                self.show_bulk()
+        elif "model" in msg:
+            self.reported = msg["model"]
+            self._update_speed()
+        elif "tokens" in msg:
+            self._show_tokens(msg["tokens"])
+        elif "error" in msg:
+            self._set_notice(msg["error"])
+            self._place()
+
+    def _on_bulk_ai_exit(self):
+        self.ai = None
+        if self.bulk is not None:
+            self.bulk["done"] = True
+            # Anything the reply skipped falls back to the offline suggestion.
+            for n, item in enumerate(self.bulk["items"], 1):
+                self.bulk["answers"].setdefault(n, _offline_answer(item))
+            self.show_bulk()
+
+    def show_bulk(self):
+        bulk = self.bulk
+        n = bulk["index"] + 1
+        item = bulk["items"][bulk["index"]]
+        self.title.configure(text="Bulk mode · %d of %d" % (n, len(bulk["items"])))
+        self.snippet.configure(text=_shorten(item["snippet"] if item["snippet"] == item["line"]
+                                             else "%s  ·  %s" % (item["snippet"], item["line"])))
+        self.hint.pack_forget()
+        for w in (self.prev_btn, self.count, self.next_btn):
+            w.pack_forget()
+        self.count.configure(text="%d/%d" % (n, len(bulk["items"])))
+        self.prev_btn.pack(side="left", before=self.settings_btn)
+        self.count.pack(side="left", before=self.settings_btn)
+        self.next_btn.pack(side="left", before=self.settings_btn)
+        self.text.pack(fill="x", padx=8, pady=(2, 6), before=self.notice if self.notice.winfo_manager() else None)
+        self._clear_text()
+        answer = bulk["answers"].get(n)
+        # Instant, not typed out: bulk mode is about speed, and the mascot keeps typing anyway.
+        self._append(answer or ("Working on all %d answers…" % len(bulk["items"]) if not bulk["done"]
+                                else "No answer came back for this one."))
+        self._fit_text()
+        self._place()
+
+    def _bulk_step(self, delta):
+        """◀ ▶ in bulk mode only look around; the page's answers still decide what's next."""
+        bulk = self.bulk
+        bulk["index"] = (bulk["index"] + delta) % len(bulk["items"])
+        self.show_bulk()
+
+    def _end_bulk(self, reason):
+        self.bulk = None
+        self._stop_ai()
+        if self.mascot:
+            self.mascot.rest = "busy" if self.watch is not None and not self.watch_offer_only else "idle"
+            self.mascot.set_state("wave")
+        self.title.configure(text="Bulk mode finished")
+        self.snippet.configure(text=reason or "")
+        self._clear_text()
+        self.text.pack_forget()
+        for w in (self.prev_btn, self.count, self.next_btn):
+            w.pack_forget()
+        self.notice_base = ""
+        self._set_notice("Back to quick mode." if self.watch is not None and not self.watch_offer_only else "")
+        self._place()
 
     def show_reading(self):
         self._ensure_mascot()
@@ -382,7 +530,9 @@ class Bar:
             self._start_ai(item)
 
     def step(self, delta):
-        if self.items:
+        if self.bulk is not None:
+            self._bulk_step(delta)
+        elif self.items:
             self.index = (self.index + delta) % len(self.items)
             self.show_item()
 
@@ -565,6 +715,13 @@ class Bar:
             self._update_speed()
         elif cmd == "quit":
             self.quit()
+
+
+def _offline_answer(item):
+    """What the offline rules say about an item, as one line."""
+    if item.get("hint"):
+        return item["hint"]
+    return "%s: %s" % (item.get("title", ""), item.get("text", "").split("\n")[0])
 
 
 def _shorten(text, limit=110):
