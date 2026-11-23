@@ -155,7 +155,7 @@ For AI answers through an Anthropic API key, add the SDK with `pip install --use
 > | AlmaLinux, Rocky, RHEL 9 and 10 | **EPEL and CRB** turned on (see the build tools above): Tesseract's Czech data and Pillow come from there, and the install fails without them. |
 > | AlmaLinux, Rocky, RHEL 10 | No `xrandr` exists, so with several monitors the bar may open on the wrong one. |
 > | AlmaLinux, Rocky, RHEL 9 | Tesseract 4.1, which reads exercises less reliably: it finds about 72% of gaps in CzGram's OCR test, against about 90% with Tesseract 5 elsewhere. Page-code reading isn't affected. |
-> | openSUSE Tumbleweed, Leap 16 | For screenshots on Wayland, `xdg-desktop-portal` with your desktop's backend (`xdg-desktop-portal-gnome` or `xdg-desktop-portal-kde`) and GLib's introspection data (`typelib-1_0-Gio-2_0`), if your desktop didn't bring them. |
+> | openSUSE Tumbleweed, Leap 16 | For screenshots on Wayland, `xdg-desktop-portal` with your desktop's backend (`xdg-desktop-portal-gnome` or `xdg-desktop-portal-kde`), if your desktop didn't bring them. |
 > | Both | On a minimal or server install, a desktop, and `xdg-utils` to open links from the settings window. |
 To update later, run `git pull` in the `CzGram` folder, build again and install the new file.
 
