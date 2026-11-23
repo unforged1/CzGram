@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.9.0-D97757?style=for-the-badge" alt="Version 1.9.0">
+  <img src="https://img.shields.io/badge/version-2.0.0-D97757?style=for-the-badge" alt="Version 2.0.0">
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
   <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
-  <img src="https://img.shields.io/badge/Windows-experimental-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows: experimental">
+  <img src="https://img.shields.io/badge/Windows-limited%20experimental-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows: limited experimental support">
   <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
   <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
 </p>
@@ -31,6 +31,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | 🌐 **Page reading** | Reads the browser tab's HTML directly, with automatic fallback either way. |
 | 🖱️ **Manual mode** | Highlight any word and press PrintScreen to get the rule behind it. |
 | ⚡ **Quick mode** | Watches the page and answers each new question as it appears. It never clicks for you. |
+| 💻 **Bulk mode** (new) | A whole set of questions on one page? Double-tap Alt: one request answers them all, and each answer appears as you answer the one before. |
 | 📚 **Offline rules** | Listed words (vyjmenovaná slova), hard/soft consonants, s/z/vz, z/ze, s/se, capital letters and more. |
 | 🤖 **AI answers** | Optional. Your Claude plan, an Anthropic key, or another provider, at about 960 input tokens per lookup. |
 | 🔥 **Speed mode** | With Opus or Fable the bar turns blue and the mascot catches fire and runs. |
@@ -45,7 +46,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16"> **Arch Linux**, **Manjaro**, **EndeavourOS**, Garuda | ✅ Supported, `PKGBUILD` | [Arch-based](#install-arch) |
 | <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | 🧪 Experimental, `macos` branch | [macOS](#install-macos) |
 | Fedora, openSUSE and other Linux | ⚠️ No package yet | Not tested |
-| <img src="https://cdn.simpleicons.org/windows/0078D4" width="16"> **Windows** 10 (1809 or later) and 11 | 🧪 Experimental, `windows` branch | [Windows](#install-windows) |
+| <img src="https://cdn.simpleicons.org/windows/0078D4" width="16"> **Windows** 10 (1809 or later) and 11 | 🧪 Limited experimental support, `windows` branch | [Windows](#install-windows) |
 
 Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install, offline OCR and all tests).
 
@@ -71,7 +72,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_1.9.0_all.deb
+sudo apt install ./dist/czgram_2.0.0_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
@@ -128,9 +129,15 @@ To remove it, run `bash packaging/macos/uninstall.sh`.
 
 <a id="install-windows"></a>
 
-### <img src="https://cdn.simpleicons.org/windows/0078D4" width="20"> Windows (experimental)
+### <img src="https://cdn.simpleicons.org/windows/0078D4" width="20"> Windows (limited experimental support)
 
-The Windows port lives on the `windows` branch. Download it as a ZIP from GitHub (Code → Download ZIP, after
+> [!WARNING]
+> Windows support is limited and experimental. Every change is tested automatically on a Windows Server machine:
+> install, unit tests, OCR, a real PrintScreen press, the bar, selected-word copying, settings, the browser connector
+> and uninstall. It hasn't been tried on an everyday Windows 10 or 11 PC yet, and some parts haven't been tested at
+> all (see the table below). Please report what works and what doesn't in an issue.
+
+The Windows port lives on the `windows` branch, at the same version (2.0.0) as the other systems. Download it as a ZIP from GitHub (Code → Download ZIP, after
 switching to the `windows` branch) or clone it, then run the installer in PowerShell from the `CzGram` folder:
 
 ```powershell
@@ -151,6 +158,13 @@ The Czech OCR data is downloaded from a pinned release and hash-checked. It's th
 | Selected word (manual) mode | Windows has no shared selection, so CzGram copies it with Ctrl+C (Ctrl+Insert in terminals) and then puts your clipboard text back. |
 | Browser connector | Registered for Chrome, Edge, Brave, Chromium and Firefox under your user in the registry. |
 | Files | Settings in `%APPDATA%\czgram`, token counts and OCR data in `%LOCALAPPDATA%\czgram`. |
+
+| Not yet tested on Windows | What to expect |
+| --- | --- |
+| The Snipping Tool on Windows 11 | Windows may keep PrintScreen until you sign out and back in once after saving settings. |
+| Bulk mode in a real browser | The Alt double tap goes through the same extension as on Linux, where it's tested in Chromium. On Windows, a single Alt press can focus the browser's menu; CzGram blocks that only while a bulk offer is open. |
+| AI answers through Claude Code | CzGram looks for `claude.exe` from Claude Code's native installer or the desktop app, and runs an npm install through Node. Only the setup is tested, not a real lookup. |
+| Several monitors and display scaling | The screenshot covers every screen; the bar sits on the main one. Scaled displays may show the bar slightly blurred. |
 
 To remove it, run `czgram --restore-shortcut`, then `powershell -ExecutionPolicy Bypass -File packaging\windows\uninstall.ps1`
 (add `-Purge` to also delete settings, keys and token counts).
@@ -198,6 +212,33 @@ with the connector active, it also reads the sentence around the word and gives 
 detection turns quick mode off. Like all AI answers, the highlighted text and sentence go to the service you chose.
 </details>
 
+<details open>
+<summary><b>💻 Bulk mode</b> (new in 2.0): a whole page of questions in one request</summary>
+
+When CzGram reads a tab in page-code mode, it reads the whole page, including what's scrolled out of view. If the
+page holds a set of two or more questions, such as a worksheet or a form, the bar offers bulk mode:
+
+> ⚡ 6 questions on this page. Double-tap Alt to answer them all at once (bulk mode).
+
+Double-tap **Alt** in the browser to accept. CzGram sends every question in **one request** and shows the answers one
+at a time, starting with the first. **Answer it on the page and the next answer appears by itself**, with no further
+requests. ◀ ▶ let you look ahead or back without changing your place. The mascot sits at its laptop and types flat
+out while bulk mode is on.
+
+- It works in quick mode, and after a PrintScreen scan in page-code mode (the offer then stays open for 45 seconds).
+- It applies to that set only. It ends after the last question, or when you leave the page, and quick mode carries
+  on without re-answering what bulk mode covered.
+- Answers count when you click an answer (a button, option, radio or checkbox) or finish typing in a gap (Enter or
+  leaving the box). Clicking blank space, scrolling or pressing other keys doesn't move it on.
+- With AI answers off, bulk mode shows the offline rules' suggestions instead.
+- A single request is cheaper than one per question: a 6-question test sheet took 1.7k tokens in total, against
+  about 1k for each separate lookup.
+- Like the rest of CzGram, it never clicks or types on the page.
+
+After installing 2.0, reload the browser extension (version 2.0.0), which adds whole-page reading and the Alt and
+answer counting.
+</details>
+
 <details>
 <summary><b>⚡ Quick mode</b>: answers each new question by itself</summary>
 
@@ -234,9 +275,12 @@ Reading HTML needs a small extension, added once. The app's settings can open it
 - **Firefox:** `about:debugging` → This Firefox → Load Temporary Add-on → `firefox/manifest.json`.
   Firefox removes temporary add-ons when it restarts; a permanent install requires signing the add-on.
 
-The extension acts only when CzGram asks, reads only the active tab's visible content, and sends it only to the local app.
-It does need permission to read all sites to be able to do that. It never reads password, card, one-time-code or hidden
-fields, and it sends at most 1 MB per page. See [Security](#security).
+The extension acts only when CzGram asks and sends what it reads only to the local app. It reads the active tab's visible
+content, or the whole page, scrolled-out parts included, when CzGram looks for a set of questions for bulk mode. Once
+CzGram has read a tab, the extension also counts double taps of Alt and the answers you give there, so bulk mode can
+follow along; it counts them and nothing else, never what you type or click. It does need permission to read all sites
+to be able to do this. It never reads password, card, one-time-code or hidden fields, and it sends at most 1 MB per page.
+See [Security](#security).
 
 ## 🤖 AI answers: three ways to connect
 
@@ -325,7 +369,7 @@ data on your computer and out of reach of web pages.
 | 🔑 API keys | Stored in `~/.config/czgram/config.json`, readable only by you, masked in settings and never logged. |
 | 🤖 Claude Code | Runs with no tools, no MCP servers, no settings and no API key from your environment, in an empty folder. Text on screen can only change the answer, never make it act. |
 | 🌐 Other AI providers | Redirects are refused, so your key is never resent to another address. Unencrypted `http://` addresses off your computer get a warning. |
-| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. |
+| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. For bulk mode it counts Alt double taps and answers, without recording which keys, text or choices. |
 | 🔌 Local sockets | Private to your user from the moment they're created, inside a folder only you can open. Oversized messages are refused. On Windows, named pipes with random names, where both ends must prove they hold a key kept in your private AppData folder. |
 | ⏱️ Page text | Long or crafted lines can't stall the analyzer: patterns run in linear time and lines are capped at 2,000 characters. |
 | 📦 Installers | The macOS and Windows installers download the Czech OCR data from a pinned release and check its hash before using it. |
@@ -361,6 +405,10 @@ instead of posting details publicly.
 - The offline listed-words check covers common roots and can miss rare relatives.
 - OCR reads the whole screen on Wayland, so other Czech text on screen can show up as items.
 - The bar is an X11 window, shown through XWayland on Wayland.
+- Windows support is limited and experimental; see [Windows](#install-windows) for what hasn't been tested.
+- Bulk mode follows your answers by counting clicks, so it can get out of step if a page has extra buttons inside
+  the set, or if a gap isn't recognised. ◀ ▶ get you back to the right answer. It's tested in Chromium; in Firefox
+  the double tap should work too, but hasn't been tested yet.
 - On macOS, the bar and settings window show a Python icon in the Dock while open, and manual mode replaces
   a non-text clipboard (such as a copied image) when it copies your selection.
 

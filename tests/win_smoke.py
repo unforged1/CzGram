@@ -145,18 +145,26 @@ def native_host_bat():
     try:
         check("host registers", wait_for(bridge.connected, 10))
 
-        def browser():
-            head = proc.stdout.read(4)
-            msg = json.loads(proc.stdout.read(struct.unpack("=I", head)[0]))
-            data = json.dumps({"id": msg["id"], "url": "https://example.cz/\n", "title": "T",
-                               "frames": []}).encode()
-            proc.stdin.write(struct.pack("=I", len(data)) + data)
-            proc.stdin.flush()
+        requests = []
 
-        threading.Thread(target=browser, daemon=True).start()
+        def browser(count):
+            for _ in range(count):
+                head = proc.stdout.read(4)
+                msg = json.loads(proc.stdout.read(struct.unpack("=I", head)[0]))
+                requests.append(msg)
+                data = json.dumps({"id": msg["id"], "url": "https://example.cz/\n", "title": "T",
+                                   "frames": []}).encode()
+                proc.stdin.write(struct.pack("=I", len(data)) + data)
+                proc.stdin.flush()
+
+        threading.Thread(target=browser, args=(2,), daemon=True).start()
         reply = bridge.read_page(timeout=5)
         # The newline would come back as \r\n if the host's stdio weren't in binary mode.
         check("page through the host", reply.get("url") == "https://example.cz/\n", reply)
+        reply = bridge.read_page(timeout=5, full=True, armed=True)
+        last = requests[-1] if requests else {}
+        check("bulk request reaches the browser", reply.get("url") and last.get("full") is True
+              and last.get("armed") is True, last)
     finally:
         proc.stdin.close()
         proc.wait(timeout=10)
