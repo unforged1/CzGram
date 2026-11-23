@@ -10,10 +10,11 @@ License:        MIT
 URL:            https://github.com/unforged1/CzGram
 BuildArch:      noarch
 
+# The python3 command: openSUSE's version-named Python (python313-base) lacks it, and "python3" is the
+# package that adds it there.
+BuildRequires:  python3
+Requires:       python3 >= 3.9
 %if 0%{?suse_version}
-# openSUSE names Python by version (python313-base), Tumbleweed and Leap provide different generic names,
-# and /usr/bin/python3 is an update-alternatives link no package owns. python3-tk and python3-Pillow
-# resolve to the system's Python on both, and bring it in. Every supported openSUSE has 3.9 or later.
 BuildRequires:  python3-Pillow
 Requires:       python3-tk
 Requires:       python3-Pillow
@@ -23,9 +24,7 @@ Requires:       tesseract-ocr-traineddata-czech
 Requires:       libX11-6
 Requires:       dejavu-fonts
 %else
-BuildRequires:  python3
 BuildRequires:  python3-pillow
-Requires:       python3 >= 3.9
 Requires:       python3-tkinter
 Requires:       python3-pillow
 Requires:       python3-gobject-base
