@@ -2,12 +2,20 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from czgram import distro  # noqa: E402
 
 
 class Distro(unittest.TestCase):
+    """Linux families. The platform is set here, since on a Mac family() is always "macos"."""
+
+    def setUp(self):
+        patch = mock.patch.object(distro.sys, "platform", "linux")
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def release(self, text):
         f = tempfile.NamedTemporaryFile("w", delete=False)
         f.write(text)
@@ -25,6 +33,15 @@ class Distro(unittest.TestCase):
         path = self.release('ID=kali\nID_LIKE=debian\n')
         self.assertEqual(distro.pkg("python3-anthropic", path), "python3-anthropic")
         self.assertEqual(distro.family("/nonexistent"), "debian")
+
+
+class Mac(unittest.TestCase):
+    def test_mac_names_whatever_os_release_says(self):
+        with mock.patch.object(distro.sys, "platform", "darwin"):
+            self.assertEqual(distro.family("/etc/os-release"), "macos")
+            self.assertEqual(distro.pkg("tesseract-ocr-ces"), "tesseract-lang (Homebrew)")
+            self.assertEqual(distro.pkg("python3-anthropic"), "anthropic (pip3 install anthropic)")
+            self.assertEqual(distro.pkg("something-else"), "something-else")
 
 
 class ArchPackage(unittest.TestCase):
