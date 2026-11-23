@@ -4,10 +4,11 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0.0-D97757?style=for-the-badge" alt="Version 2.0.0">
-  <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
-  <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
+  <img src="https://img.shields.io/badge/Debian%20based-native-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian based: native">
+  <img src="https://img.shields.io/badge/Arch%20based-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch based: supported">
   <img src="https://img.shields.io/badge/macOS-supported-555555?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: supported">
   <img src="https://img.shields.io/badge/Windows-experimental-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows: experimental">
+  <img src="https://img.shields.io/badge/RHEL%20and%20RPM%20based-supported-EE0000?style=for-the-badge&logo=redhat&logoColor=white" alt="RHEL and RPM based: supported">
   <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
   <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
 </p>
@@ -42,10 +43,11 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 
 | System | Status | How to install |
 | --- | --- | --- |
-| <img src="https://cdn.simpleicons.org/debian/A81D33" width="16"> **Debian**, **Ubuntu**, **Kali**, Linux Mint, Pop!_OS | ✅ Supported, `.deb` package | [Debian-based](#install-debian) |
+| <img src="https://cdn.simpleicons.org/debian/A81D33" width="16"> **Debian**, **Ubuntu**, **Kali**, Linux Mint, Pop!_OS | ✅ Native, `.deb` package (`main` branch) | [Debian-based](#install-debian) |
 | <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16"> **Arch Linux**, **Manjaro**, **EndeavourOS**, Garuda | ✅ Supported, `PKGBUILD` | [Arch-based](#install-arch) |
 | <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | ✅ Supported, `macos` branch | [macOS](#install-macos) |
-| Fedora, openSUSE and other Linux | ⚠️ No package yet | Not tested |
+| <img src="https://cdn.simpleicons.org/redhat/EE0000" width="16"> **RHEL** 9 and 10, Rocky, AlmaLinux, **Fedora**, **openSUSE** Tumbleweed and Leap 16 | ✅ Supported, `.rpm` package (`rpm-based` branch); openSUSE and AlmaLinux may need additions | [RHEL and RPM based](https://github.com/unforged1/CzGram/tree/rpm-based#install-rpm) |
+| Other Linux | ⚠️ No package yet | Not tested |
 | <img src="https://cdn.simpleicons.org/windows/0078D4" width="16"> **Windows** 10 (1809 or later) and 11 | 🧪 Experimental, `windows` branch; may be dropped later | [Windows](https://github.com/unforged1/CzGram/tree/windows#install-windows) |
 
 > [!WARNING]
