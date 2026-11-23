@@ -78,10 +78,13 @@ def main():
             conn, _ = srv.accept()
             conn.settimeout(3)
             try:
-                if not conn.recv(64).startswith(b"snapshot"):
+                words = conn.recv(64).split()
+                if not words or words[0] != b"snapshot":
                     continue
                 next_id += 1
-                write_message(stdout, {"id": next_id, "cmd": "snapshot"})
+                # "full": the whole page, not just what's in view. "armed": a bulk offer is open.
+                write_message(stdout, {"id": next_id, "cmd": "snapshot",
+                                       "full": b"full" in words[1:], "armed": b"armed" in words[1:]})
                 reply = None
                 while reply is None:
                     r, _, _ = select.select([stdin], [], [], 3.5)
