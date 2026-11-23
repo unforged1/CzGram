@@ -11,11 +11,10 @@ URL:            https://github.com/unforged1/CzGram
 BuildArch:      noarch
 
 %if 0%{?suse_version}
-# openSUSE names Python by version (python313-base), and Tumbleweed and Leap provide different generic
-# names, so ask for the interpreter itself. Every openSUSE CzGram supports has Python 3.9 or later.
-BuildRequires:  /usr/bin/python3
+# openSUSE names Python by version (python313-base), Tumbleweed and Leap provide different generic names,
+# and /usr/bin/python3 is an update-alternatives link no package owns. python3-tk and python3-Pillow
+# resolve to the system's Python on both, and bring it in. Every supported openSUSE has 3.9 or later.
 BuildRequires:  python3-Pillow
-Requires:       /usr/bin/python3
 Requires:       python3-tk
 Requires:       python3-Pillow
 Requires:       python3-gobject
