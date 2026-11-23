@@ -238,11 +238,15 @@ def is_ignored(line):
     return " ".join(strip(t) for t in _TOKEN.findall(line)) in _IGNORED
 
 
-def analyze_line(line):
+def analyze_line(line, page_czech=False):
+    """Items in one line. page_czech: the rest of the page is Czech, so a short line without
+    diacritics ("Ch_ba je v textu.") is still read as Czech."""
     if is_ignored(line):
         return []
     items, seen_spans = [], []
-    czech = is_czech(line)
+    line_czech = is_czech(line)
+    czech = page_czech or line_czech
+    code_like = not line_czech and bool(re.search(r"[=(){};<>#$]", line))
 
     for m in _CHOICE.finditer(line):
         pre, raw, suf = m.groups()
@@ -258,9 +262,13 @@ def analyze_line(line):
         items.append(_item("gap", m.group(0), topic, line, suggest, why))
         seen_spans.append(m.span())
 
+    tokens = [strip(t) for t in _TOKEN.findall(line)]
+    instruction = bool(tokens) and bool(_IMPERATIVE.fullmatch(tokens[0]))
     for m in _BARE_CHOICE.finditer(line):
         if any(a <= m.start() < b for a, b in seen_spans):
             continue
+        if instruction:
+            continue  # "Doplňte i/y:" names the choice for a whole exercise; it isn't one itself
         topic, suggest, why = classify_choice("", m.group(1).split("/"), "", line[m.end():])
         items.append(_item("gap", m.group(0), topic, line, suggest, why))
         seen_spans.append(m.span())
@@ -287,7 +295,7 @@ def analyze_line(line):
             continue
         topic, suggest, why = classify_gap(pre, suf)
         # snake_case and similar: without Czech around it, a "_" needs real evidence.
-        if not czech and not _looks_like_exercise(pre, suf, line, len(gaps)):
+        if (not czech or code_like) and not _looks_like_exercise(pre, suf, line, len(gaps)):
             continue
         items.append(_item("gap", m.group(0), topic, line, suggest, why))
 
@@ -315,6 +323,38 @@ def _context(line, m):
     before = line[:m.start()].split()[-3:]
     after = line[m.end():].split()[:3]
     return " ".join(before + ["___"] + after).lstrip(" .,;:„\"")
+
+
+def analyze_in_order(lines, lang="en", limit=40):
+    """Every gap and real question in page order, for bulk mode.
+
+    Unlike analyze(), nothing is reordered or merged: answer n must match the n-th item the
+    user meets on the page. Instructions ("Doplňte i/y") aren't items to answer.
+    """
+    items, seen = [], set()
+    page_czech = sum(map(is_czech, lines)) >= 2
+    for raw in lines:
+        line = " ".join(raw.split())
+        if len(line) < 3:
+            continue
+        if len(line) > MAX_LINE:
+            line = line[:MAX_LINE].rsplit(" ", 1)[0]
+        tokens = [strip(t) for t in _TOKEN.findall(line)]
+        instruction = bool(tokens) and bool(_IMPERATIVE.fullmatch(tokens[0]))
+        for item in analyze_line(line, page_czech):
+            if item["kind"] != "gap" and not item["snippet"].rstrip().endswith("?"):
+                continue
+            # "Doplňte i/y:" names the choice for the whole set; it isn't an item itself.
+            if instruction and re.fullmatch(r"[^\W\d_]{1,3}(?:/[^\W\d_]{1,3})+", item["snippet"].strip("()[] ")):
+                continue
+            key = (item["snippet"], line)
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append(item)
+            if len(items) >= limit:
+                return [_describe(i, lang) for i in items]
+    return [_describe(i, lang) for i in items]
 
 
 def analyze(lines, lang="en", limit=8):

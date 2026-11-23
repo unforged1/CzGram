@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- A worksheet with a whole set of questions on one page, for testing bulk mode.
+     Answer buttons sit at fixed positions so an automated test can click them. Items 5 and 6
+     are below the fold, so they're only found by reading the whole tab. -->
+<html lang="cs"><head><meta charset="utf-8"><title>Pracovní list – pravopis</title>
+<style>
+body{font:20px sans-serif;margin:0;background:#fafafa;height:2000px}
+h1{position:absolute;top:250px;left:40px;margin:0;font-size:26px}
+.note{position:absolute;top:295px;left:40px;margin:0;color:#555}
+.q{position:absolute;left:40px;width:900px;height:60px}
+.q p{display:inline-block;width:560px;margin:0}
+button{width:80px;height:40px;font-size:18px;margin-right:10px}
+button.picked{background:#7c7}
+</style></head><body>
+<h1>Pracovní list: pravopis</h1>
+<p class="note">Doplňte i/y, s/z a velká písmena.</p>
+<div class="q" style="top:350px"><p>1. Musíme b_dlet v Praze.</p><button>i</button><button>y</button></div>
+<div class="q" style="top:420px"><p>2. Vrátil se (z/ze) školy.</p><button>z</button><button>ze</button></div>
+<div class="q" style="top:490px"><p>3. Ch_ba je v textu.</p><button>i</button><button>y</button></div>
+<div class="q" style="top:560px"><p>4. Přijdu v (p/P)ondělí ráno.</p><button>p</button><button>P</button></div>
+<div class="q" style="top:1300px"><p>5. Letadlo s/z/vz létlo vysoko.</p><button>s</button><button>z</button><button>vz</button></div>
+<div class="q" style="top:1370px"><p>6. Pes měl velký p_sk.</p><button>i</button><button>y</button></div>
+<script>
+for (const b of document.querySelectorAll("button")) b.onclick = () => b.classList.add("picked");
+</script>
+</body></html>

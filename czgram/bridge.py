@@ -17,12 +17,12 @@ class BridgeResult:
         self.lines, self.url, self.title, self.error = list(lines), url, title, error
 
 
-def _ask(path, timeout):
+def _ask(path, timeout, request=b"snapshot"):
     s = socket.socket(socket.AF_UNIX)
     s.settimeout(timeout)
     try:
         s.connect(path)
-        s.sendall(b"snapshot\n")
+        s.sendall(request + b"\n")
         chunks, size = [], 0
         while True:
             c = s.recv(65536)
@@ -41,8 +41,13 @@ def connected():
     return bool(glob.glob(os.path.join(config.runtime_dir(), "bridge-*.sock")))
 
 
-def read_page(timeout=4.0):
-    """The raw reply from the focused browser, or the first that answered, or {"error": ...}."""
+def read_page(timeout=4.0, full=False, armed=False):
+    """The raw reply from the focused browser, or the first that answered, or {"error": ...}.
+
+    full: the whole page rather than what's in view. armed: a bulk-mode offer is open, so the
+    page keeps Alt from opening the browser's menu bar.
+    """
+    request = b" ".join([b"snapshot"] + [b"full"] * full + [b"armed"] * armed)
     socks = glob.glob(os.path.join(config.runtime_dir(), "bridge-*.sock"))
     if not socks:
         return {"error": "the browser connector isn't active "
@@ -50,7 +55,7 @@ def read_page(timeout=4.0):
     best, last_error = None, "the browser did not answer"
     for path in socks:
         try:
-            reply = _ask(path, timeout)
+            reply = _ask(path, timeout, request)
         except ConnectionRefusedError:
             # Left behind by a browser that crashed.
             try:
