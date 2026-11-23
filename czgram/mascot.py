@@ -1,4 +1,6 @@
 """A small pixel creature drawn with canvas rectangles (no image files, little memory)."""
+import os
+
 
 CELL = 4
 COLS, ROWS = 15, 14
@@ -158,4 +160,4 @@ class Mascot:
 
         if state in ("think", "busy"):
             c.create_text(WIDTH - 5, 6, text=SPINNER[t % len(SPINNER)], fill=body,
-                          font=("DejaVu Sans", 9))
+                          font=("Segoe UI" if os.name == "nt" else "DejaVu Sans", 9))

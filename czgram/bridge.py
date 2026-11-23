@@ -8,6 +8,8 @@ from . import config
 
 
 MAX_REPLY = 8 * 1024 * 1024
+# One per connected browser: a Unix socket, or on Windows a file naming the host's pipe.
+PATTERN = "bridge-*.json" if os.name == "nt" else "bridge-*.sock"
 
 
 class BridgeResult:
@@ -17,7 +19,27 @@ class BridgeResult:
         self.lines, self.url, self.title, self.error = list(lines), url, title, error
 
 
+def _ask_windows(path, timeout):
+    from . import windows
+    conn = windows.connect(path)
+    try:
+        conn.send_bytes(b"snapshot")
+        if not conn.poll(timeout):
+            raise TimeoutError("the browser did not answer in time")
+        try:
+            data = conn.recv_bytes(MAX_REPLY)
+        except OSError as e:
+            if "length" in str(e):
+                raise ValueError("the page is too large to read") from None
+            raise
+    finally:
+        conn.close()
+    return json.loads(data.decode("utf-8"))
+
+
 def _ask(path, timeout):
+    if os.name == "nt":
+        return _ask_windows(path, timeout)
     s = socket.socket(socket.AF_UNIX)
     s.settimeout(timeout)
     try:
@@ -38,12 +60,12 @@ def _ask(path, timeout):
 
 
 def connected():
-    return bool(glob.glob(os.path.join(config.runtime_dir(), "bridge-*.sock")))
+    return bool(glob.glob(os.path.join(config.runtime_dir(), PATTERN)))
 
 
 def read_page(timeout=4.0):
     """The raw reply from the focused browser, or the first that answered, or {"error": ...}."""
-    socks = glob.glob(os.path.join(config.runtime_dir(), "bridge-*.sock"))
+    socks = glob.glob(os.path.join(config.runtime_dir(), PATTERN))
     if not socks:
         return {"error": "the browser connector isn't active "
                          "(install the CzGram extension, see Settings)"}
@@ -51,7 +73,7 @@ def read_page(timeout=4.0):
     for path in socks:
         try:
             reply = _ask(path, timeout)
-        except ConnectionRefusedError:
+        except (ConnectionRefusedError, FileNotFoundError):
             # Left behind by a browser that crashed.
             try:
                 os.unlink(path)

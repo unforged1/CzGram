@@ -25,7 +25,11 @@ DEFAULTS = {
 
 
 def config_dir():
-    base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    base = os.environ.get("XDG_CONFIG_HOME")
+    if not base and os.name == "nt":
+        from .windows import config_base
+        base = config_base()
+    base = base or os.path.expanduser("~/.config")
     return os.path.join(base, "czgram")
 
 
@@ -65,9 +69,14 @@ def save(cfg):
 def runtime_dir():
     """Private directory for the app's sockets (mode 0700)."""
     base = os.environ.get("XDG_RUNTIME_DIR")
+    if not base and os.name == "nt":
+        from .windows import runtime_dir as windows_runtime_dir
+        return windows_runtime_dir()
     path = os.path.join(base, "czgram") if base else os.path.join(
         tempfile.gettempdir(), "czgram-%d" % os.getuid())
     os.makedirs(path, mode=0o700, exist_ok=True)
+    if os.name == "nt":
+        return path  # tests point XDG_RUNTIME_DIR at a private temporary folder
     st = os.lstat(path)
     if st.st_uid != os.getuid() or not stat.S_ISDIR(st.st_mode):
         raise RuntimeError("unsafe runtime directory: " + path)
@@ -76,4 +85,5 @@ def runtime_dir():
 
 
 def ui_socket():
-    return os.path.join(runtime_dir(), "ui.sock")
+    """The bar's socket; on Windows, the file naming its pipe and key."""
+    return os.path.join(runtime_dir(), "ui.json" if os.name == "nt" else "ui.sock")

@@ -83,7 +83,7 @@ def bind(command="czgram --trigger"):
     return True, "PrintScreen is handled by the CzGram hotkey service"
 
 
-def _save_backup(data):
+def save_backup(data):
     # Keep the first backup: a repeat bind must not record our own binding as "original".
     if not os.path.exists(_backup_path()):
         os.makedirs(config.config_dir(), mode=0o700, exist_ok=True)
@@ -93,7 +93,7 @@ def _save_backup(data):
 
 def _bind_gnome(command):
     shell_keys = _gnome_list(_SHELL, "show-screenshot-ui")
-    _save_backup({"desktop": "gnome", "show-screenshot-ui": shell_keys})
+    save_backup({"desktop": "gnome", "show-screenshot-ui": shell_keys})
     # GNOME Shell consumes Print before custom shortcuts see it, so it must give it up.
     remaining = [k for k in shell_keys if k != "Print"]
     if remaining != shell_keys:
@@ -112,7 +112,7 @@ def _bind_gnome(command):
 
 def _bind_xfce(command):
     old = _run("xfconf-query", "-c", _XFCE_CH, "-p", _XFCE_PROP)
-    _save_backup({"desktop": "xfce", "print": old.stdout.strip() if old.returncode == 0 else None})
+    save_backup({"desktop": "xfce", "print": old.stdout.strip() if old.returncode == 0 else None})
     res = _run("xfconf-query", "-c", _XFCE_CH, "-p", _XFCE_PROP, "-n", "-t", "string",
                "-s", command)
     if res.returncode != 0:
@@ -129,7 +129,10 @@ def restore():
         return True, "nothing to restore"
     except ValueError:
         return False, "the shortcut backup is unreadable"
-    if data.get("desktop") == "gnome":
+    if data.get("desktop") == "windows":
+        from . import windows
+        windows.restore_printscreen(data)
+    elif data.get("desktop") == "gnome":
         paths = [p for p in _gnome_list(_MEDIA, "custom-keybindings") if p != _CUSTOM_PATH]
         _gnome_set(_MEDIA, "custom-keybindings", paths)
         _gnome_set(_SHELL, "show-screenshot-ui", data.get("show-screenshot-ui", ["Print"]))

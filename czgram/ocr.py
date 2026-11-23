@@ -37,22 +37,40 @@ class Piece:
             text, left, top, right, bottom, word
 
 
+def _tesseract():
+    """(path or None, extra arguments such as where the Czech data is)."""
+    exe = shutil.which("tesseract")
+    if os.name == "nt":
+        from . import windows
+        return windows.tesseract(exe)
+    return exe, []
+
+
+def _flags():
+    if os.name == "nt":
+        from .windows import child_flags
+        return child_flags()
+    return {}
+
+
 def status():
     """(ok, message) for the settings window."""
-    exe = shutil.which("tesseract")
+    exe, extra = _tesseract()
     if not exe:
         return False, "Tesseract is not installed"
     try:
-        out = subprocess.run([exe, "--list-langs"], capture_output=True, text=True, timeout=10)
+        out = subprocess.run([exe, "--list-langs"] + extra, capture_output=True, text=True,
+                             timeout=10, **_flags())
     except (OSError, subprocess.TimeoutExpired) as e:
         return False, "Tesseract failed to start: %s" % e
     if "ces" not in (out.stdout + out.stderr).split():
-        return False, "Czech language data is missing (tesseract-ocr-ces)"
+        return False, "Czech language data is missing (%s)" % (
+            "run the CzGram installer again" if os.name == "nt" else "tesseract-ocr-ces")
     return True, "Tesseract with Czech data is ready"
 
 
 def run(pgm):
-    exe = shutil.which("tesseract")
+    exe, extra = _tesseract()
     if not exe:
         return OcrResult([], False, "Tesseract is not installed")
     env = dict(os.environ)
@@ -60,9 +78,9 @@ def run(pgm):
     # take over 40 s on a many-core machine (measured on 16 cores, Tesseract 5.5).
     env["OMP_THREAD_LIMIT"] = "1"
     # Grey PGM over stdin: no screenshot is ever written to disk here.
-    cmd = [exe, "stdin", "stdout", "-l", "ces", "--psm", "3", "-c", "hocr_char_boxes=1", "hocr"]
+    cmd = [exe, "stdin", "stdout"] + extra + ["-l", "ces", "--psm", "3", "-c", "hocr_char_boxes=1", "hocr"]
     try:
-        res = subprocess.run(cmd, input=pgm, capture_output=True, env=env, timeout=60)
+        res = subprocess.run(cmd, input=pgm, capture_output=True, env=env, timeout=60, **_flags())
     except subprocess.TimeoutExpired:
         return OcrResult([], False, "OCR timed out")
     except OSError as e:

@@ -17,34 +17,77 @@ import subprocess
 import tempfile
 import threading
 
+from . import deadline
+
+IS_WINDOWS = os.name == "nt"
+
 _KEEP_ENV = ("HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "TMPDIR", "XDG_RUNTIME_DIR",
              "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME",
              "DISPLAY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "BROWSER",
              "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy")
+# Windows needs these to start programs, find the profile and reach the network.
+_KEEP_ENV_WINDOWS = ("USERPROFILE", "USERNAME", "USERDOMAIN", "APPDATA", "LOCALAPPDATA", "TEMP", "TMP",
+                     "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR", "COMSPEC", "PATHEXT", "PROGRAMDATA",
+                     "PROGRAMFILES", "PROGRAMFILES(X86)", "HOMEDRIVE", "HOMEPATH",
+                     "CLAUDE_CODE_GIT_BASH_PATH")
 TIMEOUT_S = 90
 FALLBACK_MODELS = ("default", "opus", "sonnet", "haiku")
 
 
 def _version_key(path):
+    path = path.replace("\\", "/")
     return [int(n) for n in re.findall(r"\d+", path.split("/claude-code/")[-1].split("/")[0])]
 
 
 def find():
     """Path of the Claude Code binary: on PATH, standard installs, then the desktop app's copy."""
     home = os.path.expanduser("~")
-    exe = shutil.which("claude") or shutil.which("claude", path=os.pathsep.join(
-        (os.path.join(home, ".local/bin"), os.path.join(home, ".claude/local"),
-         os.path.join(home, ".npm-global/bin"), "/usr/local/bin")))
+    extra = [os.path.join(home, ".local/bin"), os.path.join(home, ".claude/local"),
+             os.path.join(home, ".npm-global/bin"), "/usr/local/bin"]
+    if IS_WINDOWS:
+        extra.append(os.path.join(os.environ.get("APPDATA", ""), "npm"))
+    exe = shutil.which("claude") or shutil.which("claude", path=os.pathsep.join(extra))
     if exe:
         return exe
-    base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
+    bases = [os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")]
+    names = ["claude"]
+    if IS_WINDOWS:
+        bases.append(os.environ.get("APPDATA", ""))
+        names.append("claude.exe")
     # The desktop app keeps one copy per version and updates replace them, so look each time.
-    bundled = [p for p in glob.glob(os.path.join(base, "Claude/claude-code/*/*/claude"))
+    bundled = [p for base in bases for name in names
+               for p in glob.glob(os.path.join(base, "Claude", "claude-code", "*", "*", name))
                if os.access(p, os.X_OK)]
     return max(bundled, key=_version_key) if bundled else None
 
 
+def command(exe):
+    """How to start exe: a list for subprocess, or None if it can't be run safely.
+
+    npm installs a claude.cmd on Windows. Batch files re-parse their arguments, which the
+    system prompt mustn't go through, so the CLI script it points at runs under Node directly.
+    """
+    if not IS_WINDOWS or not exe.lower().endswith((".cmd", ".bat")):
+        return [exe]
+    folder = os.path.dirname(exe)
+    script = os.path.join(folder, "node_modules", "@anthropic-ai", "claude-code", "cli.js")
+    node = shutil.which("node") or shutil.which("node", path=folder)
+    return [node, script] if node and os.path.exists(script) else None
+
+
+def _flags():
+    if IS_WINDOWS:
+        from .windows import child_flags
+        return child_flags()
+    return {}
+
+
 def clean_env():
+    if IS_WINDOWS:
+        env = {k: os.environ[k] for k in _KEEP_ENV + _KEEP_ENV_WINDOWS if k in os.environ}
+        # Claude Code finds Git Bash and Node through PATH, and Windows has no standard short one.
+        env["PATH"] = os.environ.get("PATH", "")
+        return env
     env = {k: os.environ[k] for k in _KEEP_ENV if k in os.environ}
     env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
     return env
@@ -55,9 +98,12 @@ def status():
     exe = find()
     if not exe:
         return "missing", "Claude Code isn't installed"
+    cmd = command(exe)
+    if not cmd:
+        return "missing", "Claude Code was installed in a way CzGram can't start; use the native installer"
     try:
-        res = subprocess.run([exe, "auth", "status"], capture_output=True, text=True,
-                             timeout=15, env=clean_env())
+        res = subprocess.run(cmd + ["auth", "status"], capture_output=True, text=True,
+                             timeout=15, env=clean_env(), **_flags())
         info = json.loads(res.stdout)
     except (OSError, subprocess.SubprocessError, ValueError):
         return "signed_out", "Couldn't check the Claude Code sign-in"
@@ -72,11 +118,12 @@ def status():
 def login():
     """Starts the browser sign-in. Returns the process, or None without a binary."""
     exe = find()
-    if not exe:
+    cmd = command(exe) if exe else None
+    if not cmd:
         return None
-    return subprocess.Popen([exe, "auth", "login", "--claudeai"], env=clean_env(),
+    return subprocess.Popen(cmd + ["auth", "login", "--claudeai"], env=clean_env(),
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL, start_new_session=True)
+                            stderr=subprocess.DEVNULL, start_new_session=True, **_flags())
 
 
 def list_models():
@@ -86,15 +133,16 @@ def list_models():
     Returns FALLBACK_MODELS if that fails, for example when signed out.
     """
     exe = find()
-    if not exe:
+    cmd = command(exe) if exe else None
+    if not cmd:
         return list(FALLBACK_MODELS)
     with tempfile.TemporaryDirectory(prefix="czgram-") as empty:
         proc = subprocess.Popen(
-            [exe, "-p", "--input-format", "stream-json", "--output-format", "stream-json",
+            cmd + ["-p", "--input-format", "stream-json", "--output-format", "stream-json",
              "--verbose", "--tools", "", "--strict-mcp-config", "--setting-sources", "",
              "--disable-slash-commands", "--no-session-persistence"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
-            encoding="utf-8", cwd=empty, env=clean_env())
+            encoding="utf-8", cwd=empty, env=clean_env(), **_flags())
         watchdog = threading.Timer(15, proc.kill)
         watchdog.start()
         models = []
@@ -139,7 +187,11 @@ def run(prompt, system, emit, model="default"):
     if not exe:
         emit(error="Claude Code wasn't found. Install it, or use an API key in Settings.")
         return
-    cmd = [exe, "-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
+    start = command(exe)
+    if not start:
+        emit(error="CzGram can't start this Claude Code install. Use Claude Code's native installer.")
+        return
+    cmd = start + ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
            "--effort", "low", "--tools", "", "--strict-mcp-config", "--setting-sources", "",
            "--disable-slash-commands", "--no-session-persistence", "--system-prompt", system]
     if model and model != "default":
@@ -150,7 +202,7 @@ def run(prompt, system, emit, model="default"):
     with tempfile.TemporaryDirectory(prefix="czgram-") as empty:
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                 stderr=subprocess.DEVNULL, text=True, encoding="utf-8",
-                                cwd=empty, env=clean_env())
+                                cwd=empty, env=clean_env(), **_flags())
 
         def stop(*_):
             proc.kill()
@@ -158,9 +210,8 @@ def run(prompt, system, emit, model="default"):
 
         # Dismissing the bar terminates this process; the CLI must not outlive it.
         signal.signal(signal.SIGTERM, stop)
-        signal.signal(signal.SIGALRM, lambda *_: (proc.kill(), emit(error="Claude Code took too long."),
-                                                  os._exit(0)))
-        signal.alarm(TIMEOUT_S)
+        alarm = deadline.start(TIMEOUT_S, lambda: (proc.kill(), emit(error="Claude Code took too long."),
+                                                   os._exit(0)))
         proc.stdin.write(prompt)
         proc.stdin.close()
         finished = False
@@ -196,7 +247,7 @@ def run(prompt, system, emit, model="default"):
                     else:
                         emit(done=True)
         finally:
-            signal.alarm(0)
+            deadline.cancel(alarm)
             if proc.poll() is None:
                 proc.kill()
             proc.wait()

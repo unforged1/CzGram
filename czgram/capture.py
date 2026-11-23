@@ -3,6 +3,7 @@
 X11:              XGetImage through ctypes, no helper programs.
 Wayland / other:  xdg-desktop-portal Screenshot, which writes a PNG; we read it
                   and delete that file straight away so ~/Pictures doesn't fill up.
+Windows:          Pillow's ImageGrab, in memory.
 """
 import ctypes
 import ctypes.util
@@ -159,6 +160,12 @@ def _png_to_pgm(path):
 
 def capture():
     """Returns PGM bytes. Raises CaptureError."""
+    if sys.platform == "win32":
+        from . import windows
+        try:
+            return _pgm(*windows.capture_grey())
+        except OSError as e:
+            raise CaptureError("screenshot failed: %s" % e)
     if is_wayland():
         return _capture_portal()
     if os.environ.get("DISPLAY"):

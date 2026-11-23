@@ -28,9 +28,15 @@ LINES = [
     "Šli _e sestrou domů.",
 ]
 FONTS = ["DejaVuSans", "LiberationSans-Regular", "NotoSans-Regular", "LiberationSerif-Regular"]
+if os.name == "nt":
+    # The closest Windows fonts: a humanist sans, two grotesques and a serif.
+    FONTS = ["segoeui", "arial", "calibri", "times"]
 
 
 def find_font(name):
+    if os.name == "nt":
+        path = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", name + ".ttf")
+        return path if os.path.exists(path) else None
     hits = glob.glob("/usr/share/fonts/**/%s.ttf" % name, recursive=True)
     return hits[0] if hits else None
 

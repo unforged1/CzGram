@@ -77,6 +77,10 @@ class Totals(unittest.TestCase):
 
 
 class ThroughClaudeCode(unittest.TestCase):
+    def setUp(self):
+        if os.name == "nt":
+            self.skipTest("the fake CLI is a shebang script; tests/test_windows.py covers Windows")
+
     def run_fake(self, script_lines, cfg=None):
         with tempfile.TemporaryDirectory() as home:
             bin_dir = os.path.join(home, ".local/bin")

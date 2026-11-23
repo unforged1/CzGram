@@ -1,4 +1,4 @@
-"""X11 PrintScreen listener. Uses ctypes rather than a toolkit, so it stays small while idle.
+"""X11 PrintScreen listener (windows.py has the Windows one). Uses ctypes rather than a toolkit, so it stays small while idle.
 
 On Wayland no app may grab keys globally; there the desktop shortcut runs
 `czgram --trigger` instead (see shortcuts.py) and this daemon isn't needed.
@@ -34,6 +34,9 @@ _ERROR_HANDLER = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p
 
 
 def run():
+    if sys.platform == "win32":
+        from . import windows
+        return windows.run_hotkey_daemon()
     x = ctypes.CDLL(ctypes.util.find_library("X11") or "libX11.so.6")
     x.XOpenDisplay.restype = ctypes.c_void_p
     x.XOpenDisplay.argtypes = [ctypes.c_char_p]

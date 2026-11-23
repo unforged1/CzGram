@@ -3,11 +3,14 @@
 Standard library only, so choosing this route adds nothing to the app's memory use.
 """
 import json
+import os
 import re
-import signal
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+
+from . import deadline
 
 CONNECT_TIMEOUT_S = 30
 TOTAL_TIMEOUT_S = 120
@@ -145,10 +148,13 @@ def run(prompt, system, emit, base_url, key, model):
         return
 
     def too_long(*_):
-        raise ExternalError("The service took too long to answer.")
+        if threading.current_thread() is threading.main_thread():
+            raise ExternalError("The service took too long to answer.")
+        # Windows: a timer thread can't interrupt the read, so end the lookup process here.
+        emit(error="The service took too long to answer.")
+        os._exit(0)
 
-    signal.signal(signal.SIGALRM, too_long)
-    signal.alarm(TOTAL_TIMEOUT_S)
+    alarm = deadline.start(TOTAL_TIMEOUT_S, too_long)
     think = _ThinkFilter()
     wrote = False
 
@@ -209,4 +215,4 @@ def run(prompt, system, emit, base_url, key, model):
     except OSError as e:
         emit(error="The connection to the service failed (%s)." % e)
     finally:
-        signal.alarm(0)
+        deadline.cancel(alarm)

@@ -92,8 +92,40 @@ def _manage_daemon(cfg):
         os.unlink(path)
 
 
+def _host_manifests():
+    host = os.path.join(HERE, "nmhost.py")
+    base = {"name": HOST_NAME, "description": "CzGram browser connector",
+            "path": host, "type": "stdio"}
+    return (dict(base, allowed_extensions=[FIREFOX_ID]),
+            dict(base, allowed_origins=["chrome-extension://%s/" % CHROMIUM_ID]))
+
+
+def _apply_windows(cfg):
+    from . import windows
+    results = []
+    try:
+        windows.install_native_host(*_host_manifests())
+    except OSError as e:
+        results.append((False, "Browser connector setup failed: %s." % e))
+    if cfg["bind_printscreen"]:
+        if windows.is_bound():
+            # Already set up; make sure the listener is running after an update or a crash.
+            windows.spawn_detached([windows.launcher(), "--hotkey-daemon"],
+                                   os.path.dirname(windows.launcher()))
+            results.append((True, "PrintScreen is set."))
+        else:
+            ok, msg = windows.bind_printscreen(shortcuts.save_backup)
+            results.append((ok, msg + "."))
+    else:
+        ok, msg = shortcuts.restore()
+        results.append((ok, msg[0].upper() + msg[1:] + "." if msg != "nothing to restore" else ""))
+    return results
+
+
 def apply(cfg):
     """Returns [(ok, message), ...] for the settings window."""
+    if sys.platform == "win32":
+        return _apply_windows(cfg)
     results = []
     try:
         install_native_host()

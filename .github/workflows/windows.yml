@@ -1,0 +1,64 @@
+name: Windows
+
+on:
+  push:
+    branches: [windows]
+    paths-ignore:   # docs and community files don't need a Windows machine
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0, pinned
+        with:
+          persist-credentials: false
+      - name: Tesseract without winget
+        # The install script uses winget; older runner images lack it, so fall back to Chocolatey.
+        run: if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { choco install tesseract -y --no-progress }
+      - name: Install with the Windows script
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File packaging\windows\install.ps1
+      - name: Installed command, files and shortcut
+        run: |
+          $dest = "$env:LOCALAPPDATA\Programs\CzGram"
+          & "$dest\bin\czgram.cmd" --version
+          & "$dest\bin\czgram.cmd" --usage
+          Get-ChildItem $dest, "$dest\czgram" | Select-Object -First 8 Name
+          Test-Path "$env:LOCALAPPDATA\czgram\tessdata\ces.traineddata"
+          Test-Path (Join-Path ([Environment]::GetFolderPath('Programs')) 'CzGram.lnk')
+          # The tests use the interpreter the installer chose, which has Pillow.
+          $py = ((Get-Content "$dest\bin\czgram.cmd" | Where-Object { $_.StartsWith('"') })[0] -split '"')[1]
+          "PY=$py" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          & $py --version
+      - name: Unit tests
+        run: |
+          $env:PYTHONPATH = '.'
+          & $env:PY -m unittest discover -s tests -v 2>&1 | Select-Object -Last 40
+          & $env:PY -m unittest discover -s tests
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: OCR benchmarks
+        run: |
+          $env:PYTHONPATH = '.'
+          & $env:PY tests/render_sz.py
+          & $env:PY tests/render_caps.py
+      - name: Hotkey, screenshot, bar, selection, settings and browser connector
+        run: |
+          $env:PYTHONPATH = '.'
+          & $env:PY tests/win_smoke.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Uninstall
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File packaging\windows\uninstall.ps1 -Purge
+          if (Test-Path "$env:LOCALAPPDATA\Programs\CzGram") { throw 'install folder is still there' }
+          if (Test-Path (Join-Path ([Environment]::GetFolderPath('Programs')) 'CzGram.lnk')) { throw 'shortcut is still there' }

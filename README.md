@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
   <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
+  <img src="https://img.shields.io/badge/Windows-experimental-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows: experimental">
   <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
   <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
 </p>
@@ -44,7 +45,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16"> **Arch Linux**, **Manjaro**, **EndeavourOS**, Garuda | ✅ Supported, `PKGBUILD` | [Arch-based](#install-arch) |
 | <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | 🧪 Experimental, `macos` branch | [macOS](#install-macos) |
 | Fedora, openSUSE and other Linux | ⚠️ No package yet | Not tested |
-| Windows | ❌ Not supported | |
+| <img src="https://cdn.simpleicons.org/windows/0078D4" width="16"> **Windows** 10 (1809 or later) and 11 | 🧪 Experimental, `windows` branch | [Windows](#install-windows) |
 
 Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install, offline OCR and all tests).
 
@@ -53,6 +54,7 @@ Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install,
 | GNOME, XFCE | ✅ Set up for you when you save settings | ✅ |
 | KDE Plasma, Hyprland, Sway, Cinnamon, others | 🛠️ Add a shortcut that runs `czgram --trigger` | ✅ X11 directly, Wayland through `xdg-desktop-portal` |
 | macOS | ✅ **⌃⌥G** (Control-Option-G), or F13 on extended keyboards | ✅ After you allow Screen Recording |
+| Windows | ✅ Set up for you when you save settings | ✅ |
 
 ## 📦 Install
 
@@ -124,6 +126,35 @@ macOS asks for two permissions under **System Settings → Privacy & Security**:
 
 To remove it, run `bash packaging/macos/uninstall.sh`.
 
+<a id="install-windows"></a>
+
+### <img src="https://cdn.simpleicons.org/windows/0078D4" width="20"> Windows (experimental)
+
+The Windows port lives on the `windows` branch. Download it as a ZIP from GitHub (Code → Download ZIP, after
+switching to the `windows` branch) or clone it, then run the installer in PowerShell from the `CzGram` folder:
+
+```powershell
+git clone -b windows https://github.com/unforged1/CzGram.git
+```
+
+```powershell
+cd CzGram; powershell -ExecutionPolicy Bypass -File packaging\windows\install.ps1
+```
+
+It installs for your user only, in `%LOCALAPPDATA%\Programs\CzGram`, with a Start menu entry and a `czgram` command.
+Python (with Tk) and Pillow are installed if missing. Tesseract comes from winget, and Windows asks for permission once.
+The Czech OCR data is downloaded from a pinned release and hash-checked. It's the same file Debian uses.
+
+| On Windows | What happens |
+| --- | --- |
+| PrintScreen | Saving settings turns off "Use the Print screen key to open screen capture" and starts a small key listener at sign-in. If the Snipping Tool still takes the key, sign out and back in. |
+| Selected word (manual) mode | Windows has no shared selection, so CzGram copies it with Ctrl+C (Ctrl+Insert in terminals) and then puts your clipboard text back. |
+| Browser connector | Registered for Chrome, Edge, Brave, Chromium and Firefox under your user in the registry. |
+| Files | Settings in `%APPDATA%\czgram`, token counts and OCR data in `%LOCALAPPDATA%\czgram`. |
+
+To remove it, run `czgram --restore-shortcut`, then `powershell -ExecutionPolicy Bypass -File packaging\windows\uninstall.ps1`
+(add `-Purge` to also delete settings, keys and token counts).
+
 ### 🚀 First start
 
 Open **CzGram** from the applications menu (or run `czgram`), choose your settings and press **Save**. Then open a Czech
@@ -138,8 +169,8 @@ exercise and press **PrintScreen**. The bar appears at the top of the screen; pr
 > czgram --restore-shortcut
 > ```
 
-Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` (Arch-based) or
-`bash packaging/macos/uninstall.sh` (macOS).
+Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` (Arch-based),
+`bash packaging/macos/uninstall.sh` (macOS) or `packaging\windows\uninstall.ps1` (Windows).
 
 ## ⚙️ Settings
 
@@ -218,7 +249,7 @@ V/v choice. This keeps a lookup to about 960 input tokens through Claude Code, d
 | Connection | Cost | Setup |
 | --- | --- | --- |
 | **Your Claude plan** (through Claude Code) | Counts toward your plan's limits | Press **Sign in** in settings |
-| **Anthropic API key** | Billed per use | `python3-anthropic` (Debian) or `python-anthropic` (Arch) |
+| **Anthropic API key** | Billed per use | `python3-anthropic` (Debian), `python-anthropic` (Arch) or `py -m pip install --user anthropic` (Windows) |
 | **Another provider** (OpenAI-compatible) | Depends on the provider | Enter its address and key, press **Load models** |
 
 <details>
@@ -295,9 +326,9 @@ data on your computer and out of reach of web pages.
 | 🤖 Claude Code | Runs with no tools, no MCP servers, no settings and no API key from your environment, in an empty folder. Text on screen can only change the answer, never make it act. |
 | 🌐 Other AI providers | Redirects are refused, so your key is never resent to another address. Unencrypted `http://` addresses off your computer get a warning. |
 | 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. |
-| 🔌 Local sockets | Private to your user from the moment they're created, inside a folder only you can open. Oversized messages are refused. |
+| 🔌 Local sockets | Private to your user from the moment they're created, inside a folder only you can open. Oversized messages are refused. On Windows, named pipes with random names, where both ends must prove they hold a key kept in your private AppData folder. |
 | ⏱️ Page text | Long or crafted lines can't stall the analyzer: patterns run in linear time and lines are capped at 2,000 characters. |
-| 📦 Installers | The macOS installer downloads the Czech OCR data from a pinned commit and checks its hash before using it. |
+| 📦 Installers | The macOS and Windows installers download the Czech OCR data from a pinned release and check its hash before using it. |
 
 <details>
 <summary><b>Security review, November 2026</b>: what was fixed</summary>

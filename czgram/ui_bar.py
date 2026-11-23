@@ -1,14 +1,23 @@
-"""The small bar at the top of the screen. Single-threaded: Tk file handlers drive everything."""
+"""The small bar at the top of the screen. Single-threaded: Tk file handlers drive everything.
+
+Windows' Tk has no file handlers, so there a thread per pipe reads into a queue that the
+Tk loop empties every few milliseconds. All widget work still happens on the main thread.
+"""
 import json
 import os
+import queue
 import shutil
 import signal
 import socket
 import subprocess
 import sys
+import threading
 import tkinter as tk
 
 from . import config, speed
+
+IS_WINDOWS = os.name == "nt"
+POLL_MS = 30  # Windows only: how often the queues are emptied
 
 BG = "#1F1E1D"
 PANEL = "#2B2A28"
@@ -16,7 +25,7 @@ FG = "#F4F1EA"
 MUTED = "#A8A29A"
 ACCENT = "#D97757"
 HINT = "#E8B48F"
-FONT = "DejaVu Sans"
+FONT = "Segoe UI" if IS_WINDOWS else "DejaVu Sans"
 MAX_TEXT_LINES = 9
 CHARS_PER_TICK = 7  # at 8 ticks a second: quick to read but visibly "spoken"
 QUICK_CHARS_PER_TICK = 40  # quick mode is about getting the answer now
@@ -32,18 +41,56 @@ class Child:
     def __init__(self, root, args, on_message, on_exit, stdin_data=None):
         self.root, self.on_message, self.on_exit = root, on_message, on_exit
         self.buf = b""
+        extra = {}
+        if IS_WINDOWS:
+            from .windows import child_flags
+            extra = child_flags()
         self.proc = subprocess.Popen(
             [sys.executable, "-m"] + args, stdout=subprocess.PIPE, cwd=PKG_DIR,
             stdin=subprocess.PIPE if stdin_data else subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL)
+            stderr=subprocess.DEVNULL, **extra)
         if stdin_data:
             self.proc.stdin.write(stdin_data)
             self.proc.stdin.close()
         self.fd = self.proc.stdout.fileno()
-        root.createfilehandler(self.fd, tk.READABLE, self._readable)
+        if IS_WINDOWS:
+            self.inbox = queue.Queue()
+            threading.Thread(target=self._read_thread, args=(self.proc.stdout, self.inbox),
+                             daemon=True).start()
+            self.root.after(POLL_MS, self._drain)
+        else:
+            root.createfilehandler(self.fd, tk.READABLE, self._readable)
+
+    def _read_thread(self, pipe, inbox):
+        while True:
+            try:
+                data = pipe.read1(65536)
+            except (OSError, ValueError):
+                data = b""
+            inbox.put(data)
+            if not data:
+                try:
+                    pipe.close()
+                except OSError:
+                    pass
+                return
+
+    def _drain(self):
+        if self.proc is None:
+            return
+        try:
+            while True:
+                data = self.inbox.get_nowait()
+                self._feed(data)
+                if self.proc is None:
+                    return
+        except queue.Empty:
+            self.root.after(POLL_MS, self._drain)
 
     def _readable(self, _fd, _mask):
-        data = os.read(self.fd, 65536)
+        self._feed(os.read(self.fd, 65536))
+
+    def _feed(self, data):
         if not data:
             self.close()
             self.on_exit()
@@ -58,6 +105,17 @@ class Child:
 
     def close(self):
         if self.proc is None:
+            return
+        if IS_WINDOWS:
+            # Kill first: the reader thread then sees the pipe end and stops by itself.
+            from .windows import kill_tree
+            if self.proc.poll() is None:
+                try:
+                    kill_tree(self.proc.pid)
+                except (OSError, subprocess.SubprocessError):
+                    self.proc.kill()
+            self.proc.wait()
+            self.proc = None
             return
         self.root.deletefilehandler(self.fd)
         self.proc.stdout.close()
@@ -248,6 +306,9 @@ class Bar:
 
     def _read_primary(self):
         """The system's current selection, whichever app holds it. Empty if there is none."""
+        if IS_WINDOWS:
+            from .windows import read_selection
+            return read_selection()
         for kind in ("UTF8_STRING", "STRING"):
             try:
                 return self.root.selection_get(selection="PRIMARY", type=kind)[:500]
@@ -498,8 +559,15 @@ class Bar:
         self._screen_cached = self._screen()
         self.visible = True
         self._place()
+        previous = None
+        if IS_WINDOWS:
+            import ctypes
+            ctypes.windll.user32.GetForegroundWindow.restype = ctypes.c_void_p
+            previous = ctypes.windll.user32.GetForegroundWindow()
         self.root.deiconify()
         self.root.lift()
+        if IS_WINDOWS:
+            self._no_activate(previous)
         if self.mascot:
             self.mascot.start()
 
@@ -518,6 +586,10 @@ class Bar:
             self.quit()  # nothing stays in memory between presses
 
     def open_settings(self):
+        if IS_WINDOWS:
+            from .windows import spawn_detached
+            spawn_detached(["-m", "czgram", "--config"], PKG_DIR)
+            return
         subprocess.Popen([sys.executable, "-m", "czgram", "--config"], cwd=PKG_DIR,
                          start_new_session=True)
 
@@ -526,6 +598,8 @@ class Bar:
         self._stop_ai()
         if self.scan is not None:
             self.scan.close()
+        if IS_WINDOWS:
+            self.srv.close()
         try:
             os.unlink(config.ui_socket())
         except OSError:
@@ -534,7 +608,68 @@ class Bar:
 
     # ---------------------------------------------------------- commands from other processes
 
+    def _no_activate(self, previous):
+        """Showing the bar mustn't take focus from the exercise: the next press copies the
+        selection with Ctrl+C, which has to reach the user's window, not this one.
+
+        Tk creates the outer window when it's first shown, so the style is set here, and
+        focus goes back to `previous` if showing took it."""
+        import ctypes
+        self.root.update_idletasks()
+        try:
+            hwnd = int(self.root.wm_frame(), 16)
+        except (tk.TclError, ValueError):
+            return
+        u = ctypes.windll.user32
+        u.GetForegroundWindow.restype = ctypes.c_void_p
+        u.SetForegroundWindow.argtypes = [ctypes.c_void_p]
+        get = getattr(u, "GetWindowLongPtrW", u.GetWindowLongW)
+        put = getattr(u, "SetWindowLongPtrW", u.SetWindowLongW)
+        get.restype = put.restype = ctypes.c_ssize_t
+        get.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        put.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_ssize_t]
+        GWL_EXSTYLE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW = -20, 0x08000000, 0x00000080
+        put(hwnd, GWL_EXSTYLE, get(hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW)
+        if previous and u.GetForegroundWindow() != previous:
+            u.SetForegroundWindow(previous)
+
+    def _listen_windows(self):
+        from .windows import serve
+        self.srv = serve(config.ui_socket())
+        self.commands = queue.Queue()
+
+        def accept():
+            while True:
+                try:
+                    conn = self.srv.accept()
+                except Exception:  # noqa: BLE001  a client without the key, or the listener closed
+                    if getattr(self.srv, "_listener", None) is None:
+                        return
+                    continue
+                try:
+                    if conn.poll(0.5):
+                        self.commands.put(conn.recv_bytes(32).decode("ascii", "ignore").strip())
+                except (OSError, EOFError):
+                    pass
+                finally:
+                    conn.close()
+
+        threading.Thread(target=accept, daemon=True).start()
+        self.root.after(POLL_MS, self._drain_commands)
+
+    def _drain_commands(self):
+        try:
+            while True:
+                self._run_command(self.commands.get_nowait())
+        except queue.Empty:
+            pass
+        except tk.TclError:
+            return  # the window is gone
+        self.root.after(POLL_MS, self._drain_commands)
+
     def _listen(self):
+        if IS_WINDOWS:
+            return self._listen_windows()
         path = config.ui_socket()
         try:
             os.unlink(path)
@@ -558,6 +693,9 @@ class Bar:
             cmd = ""
         finally:
             conn.close()
+        self._run_command(cmd)
+
+    def _run_command(self, cmd):
         if cmd == "scan":
             self.start_scan()
         elif cmd == "reload":

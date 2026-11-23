@@ -16,6 +16,7 @@ Thanks for helping. Bug reports, new grammar rules, OCR fixes and ports are all 
 | `main` | The Debian/Ubuntu version, the default | Anything that applies everywhere |
 | `arch-based` | `main` plus the Arch Linux `PKGBUILD` | Arch packaging |
 | `macos` | `arch-based` plus the macOS port and its CI | macOS code and the macOS installer |
+| `windows` | `main` plus the Windows port and its CI | Windows code and the Windows installer |
 | `experimental` | Work in progress | Only when asked |
 
 Fixes to shared code go to `main`. The maintainer carries them to the other branches.
@@ -29,7 +30,8 @@ sudo apt install python3-tk python3-pil python3-gi tesseract-ocr tesseract-ocr-c
 ```
 
 On Arch, install `tk python-pillow python-gobject tesseract tesseract-data-ces`. On macOS, use the install script on
-the `macos` branch. Then, from the repository folder:
+the `macos` branch. On Windows, run `packaging\windows\install.ps1` on the `windows` branch once for Tesseract and the
+Czech data, then `py -m czgram` from the repository folder. Then, from the repository folder:
 
 ```bash
 python3 -m czgram

@@ -15,7 +15,11 @@ INIT = '{"type":"system","subtype":"init","tools":%s,"mcp_servers":[]}'
 OK = '{"type":"result","subtype":"success","is_error":false,"result":"x"}'
 SIGNED_OUT = '{"type":"result","subtype":"success","is_error":true,"result":"Not logged in · Please run /login"}'
 
+# The fake CLI is a shebang script and the tests isolate it with HOME, neither of which Windows uses.
+POSIX_ONLY = unittest.skipIf(os.name == "nt", "fake CLI needs POSIX; tests/test_windows.py covers Windows")
 
+
+@POSIX_ONLY
 class ClaudeCode(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
@@ -140,7 +144,7 @@ class Find(unittest.TestCase):
             old = {k: os.environ.get(k) for k in ("XDG_CONFIG_HOME", "PATH", "HOME")}
             os.environ.update(XDG_CONFIG_HOME=home, PATH="/nonexistent", HOME=home)
             try:
-                self.assertIn("/2.1.317/", claude_code.find())
+                self.assertIn("/2.1.317/", claude_code.find().replace("\\", "/"))
             finally:
                 for k, v in old.items():
                     if v is None:

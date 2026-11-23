@@ -47,6 +47,10 @@ class ShortcutQuoting(unittest.TestCase):
                          "'/home/o\\'neil/czgram --trigger'")
 
 
+POSIX_ONLY = unittest.skipIf(os.name == "nt", "POSIX only; tests/test_windows.py covers Windows")
+
+
+@POSIX_ONLY
 class PortalFile(unittest.TestCase):
     def test_only_own_regular_files_are_deleted(self):
         with tempfile.TemporaryDirectory() as d:
@@ -68,6 +72,7 @@ class SizeLimits(unittest.TestCase):
         self.assertIsNone(nmhost.read_message(r))
         os.close(r)
 
+    @POSIX_ONLY
     def test_bridge_stops_reading_a_huge_reply(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "s.sock")
@@ -93,6 +98,7 @@ class SizeLimits(unittest.TestCase):
             t.join()
             srv.close()
 
+    @POSIX_ONLY
     def test_sockets_are_private(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "s.sock")

@@ -4,7 +4,6 @@ Kept per day and per model in ~/.local/state/czgram/usage.json. It holds only nu
 never any exercise text. Lookups through another provider aren't counted.
 """
 import datetime
-import fcntl
 import json
 import os
 import tempfile
@@ -13,8 +12,26 @@ FIELDS = ("input", "output", "thinking", "cache_read", "cache_write")
 
 
 def path():
-    base = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
+    base = os.environ.get("XDG_STATE_HOME")
+    if not base and os.name == "nt":
+        from .windows import local_dir
+        return os.path.join(local_dir(), "usage.json")
+    base = base or os.path.expanduser("~/.local/state")
     return os.path.join(base, "czgram", "usage.json")
+
+
+def _lock(f):
+    """Blocks until this process holds the lock file."""
+    if os.name == "nt":
+        import msvcrt
+        while True:
+            try:
+                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)  # itself retries for 10 s
+                return
+            except OSError:
+                continue
+    import fcntl
+    fcntl.flock(f, fcntl.LOCK_EX)
 
 
 def _load():
@@ -49,7 +66,7 @@ def record(entry, day=None):
     day = day or datetime.date.today().isoformat()
     # Two lookups can finish together, so hold a lock across the read and the write.
     with open(path() + ".lock", "w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        _lock(lock)
         data = _load()
         row = data["days"].setdefault(day, {}).setdefault(entry.get("model") or "unknown", {})
         row["requests"] = row.get("requests", 0) + 1

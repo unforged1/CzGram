@@ -15,7 +15,8 @@ MUTED = "#6B665E"
 OK = "#2F7D4F"
 BAD = "#B3402A"
 ACCENT = "#D97757"
-FONT = "DejaVu Sans"
+IS_WINDOWS = os.name == "nt"
+FONT = "Segoe UI" if IS_WINDOWS else "DejaVu Sans"
 WRAP = 470
 ANTHROPIC_MODELS = ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1")
 
@@ -91,7 +92,7 @@ class ConfigWindow:
         self.ext_row.pack(anchor="w", pady=(4, 0), fill="x")
         ttk.Button(self.ext_row, text="Open extension folder", command=self._open_ext).pack(side="left")
         self.ext_help = self._note(left, "Page code needs the CzGram browser connector, added once. "
-                                         "Chromium or Chrome: chrome://extensions → Developer mode → "
+                                         "Chromium, Chrome, Edge or Brave: chrome://extensions → Developer mode → "
                                          "Load unpacked → the “chromium” folder. Firefox: "
                                          "about:debugging → This Firefox → Load Temporary Add-on → "
                                          "“firefox/manifest.json” (lasts until the browser restarts).")
@@ -170,8 +171,10 @@ class ConfigWindow:
         self._section(right, "Keyboard")
         ttk.Checkbutton(right, text="Use the PrintScreen key for CzGram",
                         variable=v["bind_printscreen"]).pack(anchor="w")
-        self._note(right, "Replaces your desktop's PrintScreen shortcut. Undo it by unticking this, "
-                         "or by running: czgram --restore-shortcut")
+        self._note(right, ("Turns off Windows' “Print screen opens Snipping Tool” option and starts a small "
+                          "key listener at sign-in. " if IS_WINDOWS else
+                          "Replaces your desktop's PrintScreen shortcut. ") +
+                   "Undo it by unticking this, or by running: czgram --restore-shortcut")
 
         self.status = ttk.Label(body, wraplength=2 * WRAP)
         # Claimed before the rest of the window, so a tall window can't push them off screen.
@@ -342,7 +345,9 @@ class ConfigWindow:
 
     def _open_ext(self):
         path = install.extension_dir()
-        if shutil.which("xdg-open"):
+        if IS_WINDOWS:
+            os.startfile(path)
+        elif shutil.which("xdg-open"):
             subprocess.Popen(["xdg-open", path])
         self.status.configure(text="Extension folder: " + path, foreground=MUTED)
 
