@@ -1,0 +1,99 @@
+name: RPM
+
+on:
+  push:
+    branches: [rpm-based]
+    paths-ignore:   # docs and community files don't need a build
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rpm:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Fedora
+            image: fedora:latest
+            family: fedora
+          - name: AlmaLinux 10 (RHEL 10)
+            image: almalinux:10
+            family: rhel
+          - name: AlmaLinux 9 (RHEL 9)
+            image: almalinux:9
+            family: rhel
+          - name: openSUSE Tumbleweed
+            image: opensuse/tumbleweed:latest
+            family: suse
+          - name: openSUSE Leap 16
+            image: opensuse/leap:16.0
+            family: suse
+    steps:
+      - name: Build tools and test fonts (Fedora, RHEL)
+        if: matrix.family != 'suse'
+        run: |
+          if [ "${{ matrix.family }}" = rhel ]; then
+            # Tesseract's Czech data and Pillow come from EPEL, which needs CRB.
+            dnf install -y epel-release dnf-plugins-core
+            dnf config-manager --set-enabled crb
+          fi
+          dnf install -y rpm-build python3-pillow findutils tar gzip \
+            liberation-sans-fonts liberation-serif-fonts google-noto-sans-fonts
+      - name: Build tools and test fonts (openSUSE)
+        if: matrix.family == 'suse'
+        run: zypper --non-interactive install rpm-build python3-Pillow findutils tar gzip liberation-fonts noto-sans-fonts
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0, pinned
+        with:
+          persist-credentials: false
+      - name: Build the RPM
+        run: sh packaging/rpm/build_rpm.sh
+      - name: Install it with the system's package manager
+        run: |
+          if [ "${{ matrix.family }}" = suse ]; then
+            zypper --non-interactive --no-gpg-checks install --allow-unsigned-rpm ./dist/czgram-*.rpm
+          else
+            dnf install -y ./dist/czgram-*.rpm
+          fi
+          rpm -qi czgram | head -4
+      - name: Installed command
+        run: |
+          czgram --version
+          czgram --usage
+          test -x /usr/lib/czgram/czgram/nmhost.py
+          test -f /usr/share/czgram/extension/chromium/manifest.json
+          tesseract --list-langs 2>&1 | grep -x ces
+      - name: Unit tests
+        run: PYTHONPATH=. python3 -m unittest discover -s tests
+      - name: OCR benchmarks
+        run: |
+          PYTHONPATH=. python3 tests/render_sz.py
+          PYTHONPATH=. python3 tests/render_caps.py
+      - name: Scan an exercise with the installed app
+        run: |
+          python3 - <<'EOF'
+          import glob, json, subprocess
+          from PIL import Image, ImageDraw, ImageFont
+          font = ImageFont.truetype(glob.glob("/usr/share/fonts/**/DejaVuSans.ttf", recursive=True)[0], 32)
+          img = Image.new("L", (1200, 300), 250)
+          ImageDraw.Draw(img).text((40, 100), "Doplň: Maminka b_dlí doma. Vidím (mě/mně) v zrcadle.", fill=20, font=font)
+          img.save("/tmp/exercise.png")
+          out = subprocess.run(["czgram", "--scan-file", "/tmp/exercise.png"], capture_output=True, text=True, check=True)
+          result = [json.loads(l) for l in out.stdout.splitlines() if '"result"' in l][-1]
+          found = [i["snippet"] for i in result["items"]]
+          print("found:", found)
+          assert "b_dlí" in found and "(mě/mně)" in found, found
+          EOF
+      - name: Remove it
+        run: |
+          if [ "${{ matrix.family }}" = suse ]; then zypper --non-interactive remove czgram; else dnf remove -y czgram; fi
+          ! test -e /usr/lib/czgram

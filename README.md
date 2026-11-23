@@ -6,6 +6,7 @@
   <img src="https://img.shields.io/badge/version-2.0.0-D97757?style=for-the-badge" alt="Version 2.0.0">
   <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
   <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
+  <img src="https://img.shields.io/badge/Fedora%20%7C%20RHEL%20%7C%20openSUSE-supported-51A2DA?style=for-the-badge&logo=fedora&logoColor=white" alt="Fedora, RHEL and openSUSE: supported">
   <img src="https://img.shields.io/badge/macOS-supported-555555?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: supported">
   <img src="https://img.shields.io/badge/Windows-experimental-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows: experimental">
   <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
@@ -45,7 +46,8 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | <img src="https://cdn.simpleicons.org/debian/A81D33" width="16"> **Debian**, **Ubuntu**, **Kali**, Linux Mint, Pop!_OS | ✅ Supported, `.deb` package | [Debian-based](#install-debian) |
 | <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16"> **Arch Linux**, **Manjaro**, **EndeavourOS**, Garuda | ✅ Supported, `PKGBUILD` | [Arch-based](#install-arch) |
 | <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | ✅ Supported, `macos` branch | [macOS](#install-macos) |
-| Fedora, openSUSE and other Linux | ⚠️ No package yet | Not tested |
+| <img src="https://cdn.simpleicons.org/fedora/51A2DA" width="16"> **Fedora**, **RHEL** 9 and 10, Rocky, AlmaLinux, **openSUSE** Tumbleweed and Leap 16 | ✅ Supported, `.rpm` package (`rpm-based` branch) | [Fedora, RHEL, openSUSE](#install-rpm) |
+| Other Linux | ⚠️ No package yet | Not tested |
 | <img src="https://cdn.simpleicons.org/windows/0078D4" width="16"> **Windows** 10 (1809 or later) and 11 | 🧪 Experimental, `windows` branch; may be dropped later | [Windows](https://github.com/unforged1/CzGram/tree/windows#install-windows) |
 
 > [!WARNING]
@@ -54,7 +56,8 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 > dropped in a later release if it can't be kept working well. Use it to try CzGram on Windows, not as something to
 > rely on for the long run. Linux and macOS are the supported systems.
 
-Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install, offline OCR and all tests).
+Tested on Kali Linux with GNOME, and in Arch Linux, Fedora, AlmaLinux 9 and 10, and openSUSE Tumbleweed and Leap 16
+containers (build, install, offline OCR and all tests).
 
 | Desktop | PrintScreen key | Screenshots |
 | --- | --- | --- |
@@ -107,6 +110,42 @@ cd CzGram/packaging/arch && makepkg -si
 
 To update later, run `git pull` in the `CzGram` folder, then `makepkg -si` again in `packaging/arch`.
 
+<a id="install-rpm"></a>
+
+### <img src="https://cdn.simpleicons.org/fedora/51A2DA" width="20"> Fedora, RHEL, Rocky, AlmaLinux and openSUSE
+
+The RPM package lives on the `rpm-based` branch. One spec file builds it for both families. Install the build tools
+first:
+
+| System | Build tools |
+| --- | --- |
+| Fedora | `sudo dnf install git rpm-build python3-pillow` |
+| RHEL, Rocky, AlmaLinux 9 and 10 | Tesseract's Czech data and Pillow come from EPEL: `sudo dnf install epel-release`, then `sudo dnf config-manager --set-enabled crb` (on RHEL itself: `sudo subscription-manager repos --enable codeready-builder-for-rhel-$(rpm -E %rhel)-$(arch)-rpms`), then `sudo dnf install git rpm-build python3-pillow` |
+| openSUSE Tumbleweed, Leap 16 | `sudo zypper install git rpm-build python3-Pillow` |
+
+```bash
+git clone -b rpm-based https://github.com/unforged1/CzGram.git
+```
+
+```bash
+cd CzGram && sh packaging/rpm/build_rpm.sh
+```
+
+Then install the package from `dist/`. The package manager brings in Tesseract with the Czech data
+(`tesseract-langpack-ces` on Fedora and RHEL, `tesseract-ocr-traineddata-czech` on openSUSE), Tk and the rest:
+
+```bash
+sudo dnf install ./dist/czgram-2.0.0-1.*.noarch.rpm
+```
+
+```bash
+sudo zypper install --allow-unsigned-rpm ./dist/czgram-2.0.0-1.*.noarch.rpm
+```
+
+The first is for Fedora and RHEL, the second for openSUSE. The package isn't signed, because you built it yourself.
+For AI answers through an Anthropic API key, add the SDK with `pip install --user anthropic`.
+To update later, run `git pull` in the `CzGram` folder, build again and install the new file.
+
 <a id="install-macos"></a>
 
 ### <img src="https://cdn.simpleicons.org/apple/999999" width="20"> macOS
@@ -146,7 +185,8 @@ exercise and press **PrintScreen**. The bar appears at the top of the screen; pr
 > czgram --restore-shortcut
 > ```
 
-Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` (Arch-based) or
+Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` (Arch-based),
+`sudo dnf remove czgram` (Fedora, RHEL), `sudo zypper remove czgram` (openSUSE) or
 `bash packaging/macos/uninstall.sh` (macOS).
 
 ## ⚙️ Settings
@@ -389,6 +429,13 @@ through `packaging/stage.sh`.
 
 ```bash
 cd packaging/arch && makepkg -f
+```
+
+On the `rpm-based` branch, the RPM for Fedora, RHEL and openSUSE builds with the command below, through the same
+`packaging/stage.sh`.
+
+```bash
+sh packaging/rpm/build_rpm.sh
 ```
 
 ## 📄 License
