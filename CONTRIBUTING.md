@@ -16,7 +16,7 @@ Thanks for helping. Bug reports, new grammar rules, OCR fixes and ports are all 
 | `main` | The Debian/Ubuntu version, the default | Anything that applies everywhere |
 | `arch-based` | `main` plus the Arch Linux `PKGBUILD` | Arch packaging |
 | `macos` | `arch-based` plus the macOS port and its CI | macOS code and the macOS installer |
-| `windows` | `main` plus the Windows port and its CI | Windows code and the Windows installer |
+| `windows` | `main` plus the Windows port and its CI (experimental; may be dropped) | Windows code and the Windows installer |
 | `experimental` | Work in progress | Only when asked |
 
 Fixes to shared code go to `main`. The maintainer carries them to the other branches.
