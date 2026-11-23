@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CzGram connector",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Lets the CzGram desktop app read the active tab when you press PrintScreen.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArk1t85rh2oahxqhFu/KqiyS6kgThWdDuq2d7llSrTfhpnvfoMyHLBngErGG+rU0LNUCvAMKl9TEvTc4RI216ZJihU5Rbrh1u7Q6SEPfaojdPia27rsg2ReaIdyAQJhN+dT81GCWEqY79zf9GMnHZxhP4UDUId2eXoaG5sMU9eYfX0lHjy0xOYj3fA2LxjwTpP58Rhp2P6kqeFFZwJYX3OiAQ4kmgE+2IwQWlwOOZjomDhhNy0/7z9wag7ZCw064IbiYAZ3wij5sZh344gRniV6QSJX96RUC0uYf1m/B97IRqq1bLGx7uJf/247WXfpBI3aXxtKBDK1YXT9n1l9NlUQIDAQAB",
   "minimum_chrome_version": "110",

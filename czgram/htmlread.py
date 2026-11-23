@@ -3,6 +3,7 @@
 An empty <input> becomes "___", a <select> becomes "(a/b/c)", so that fill-in
 exercises built from form controls reach the analyzer as ordinary gaps.
 """
+import re
 from html.parser import HTMLParser
 
 _SKIP = {"czgram-selection", "script", "style", "noscript", "template", "svg", "canvas", "head", "title"}
@@ -207,3 +208,12 @@ def to_lines(html):
     r.close()
     r.flush()
     return r.lines
+
+
+_STATE = re.compile(r'^<czgram-state data-alt="(\d+)" data-answers="(\d+)">')
+
+
+def find_state(html):
+    """(Alt double-taps, answers given) counted on the page; (0, 0) from an older extension."""
+    m = _STATE.match(html)
+    return (int(m.group(1)), int(m.group(2))) if m else (0, 0)

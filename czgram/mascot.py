@@ -12,10 +12,14 @@ BLUE_BODY = "#4FA8FF"
 BLUE_SHADE = "#2B6FD6"
 BLUE_DARK = "#0B1830"
 FLAME = ("#E3F6FF", "#8FD6FF", "#3F9BFF")
+LAPTOP_LID = "#3A3D44"
+LAPTOP_BASE = "#9AA0A8"
+SCREEN_TEXT = ("#9AD8FF", "#E3F6FF", "#5FB4F0")
+SWEAT = "#8FD6FF"
 
 
 class Mascot:
-    """States: idle, busy, think, talk, wave, sad. Call start()/stop() as the bar shows or hides.
+    """States: idle, busy, think, talk, wave, sad, laptop (bulk mode: typing flat out). Call start()/stop() as the bar shows or hides.
 
     `rest` is the state it settles back into: "busy" while quick mode is running.
     """
@@ -91,9 +95,39 @@ class Mascot:
             if (t + i) % 3:
                 self._rect((t + i * 2) % 2, y, 1, 1, FLAME[(t + i) % 3])
 
+    def _draw_laptop(self):
+        """Hunched behind a laptop, hammering the keys, eyes racing along the lines."""
+        t = self.t
+        body, shade, dark = (BLUE_BODY, BLUE_SHADE, BLUE_DARK) if self.running else (BODY, SHADE, DARK)
+        top = 2 + t % 2                      # quick jittery bounce
+        self._rect(3, top, 9, 6, body)       # body, its lower half hidden by the lid
+        # Eyes flick left to right across the screen, faster than the busy state.
+        shift = (-1, 0, 1, 1)[t % 4]
+        self._rect(5 + shift, top + 1, 1, 2, dark)
+        self._rect(9 + shift, top + 1, 1, 2, dark)
+        # Sweat drop and speed streaks: this is bulk mode, everything at once.
+        if t % 6 < 3:
+            self._rect(12, top - 1 + t % 3, 1, 1, SWEAT)
+        for i, y in enumerate((top + 1, top + 3, top + 5)):
+            if (t + i) % 2:
+                self._rect(0, y, 1 + (t + i) % 2, 1, SWEAT)
+        # Laptop: lid facing us with scrolling "text", then the keyboard deck.
+        self._rect(4, 7, 7, 5, LAPTOP_LID)
+        for row in range(3):
+            width = 2 + (t * 3 + row * 5) % 4
+            self._rect(5, 8 + row, width, 1, SCREEN_TEXT[(t + row) % 3])
+        self._rect(2, 12, 11, 1, LAPTOP_BASE)
+        # Hands on the keys, taking turns every tick.
+        self._rect(2 + t % 2, 11 - t % 2, 2, 1, body)
+        self._rect(11 - (t + 1) % 2, 11 - (t + 1) % 2, 2, 1, body)
+        self.c.create_text(WIDTH - 5, 6, text=SPINNER[(t * 2) % len(SPINNER)], fill=body, font=("DejaVu Sans", 9))
+
     def draw(self):
         c, t, state = self.c, self.t, self.state
         c.delete("all")
+        if state == "laptop":
+            self._draw_laptop()
+            return
         if self.running and state != "sad":
             self._draw_running()
             return
