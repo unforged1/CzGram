@@ -10,19 +10,20 @@ License:        MIT
 URL:            https://github.com/unforged1/CzGram
 BuildArch:      noarch
 
-BuildRequires:  python3
 %if 0%{?suse_version}
+# openSUSE names Python by version (python313-base); python3-base is the generic name.
+BuildRequires:  python3-base
 BuildRequires:  python3-Pillow
-Requires:       python3 >= 3.9
+Requires:       python3-base >= 3.9
 Requires:       python3-tk
 Requires:       python3-Pillow
 Requires:       python3-gobject
 Requires:       tesseract-ocr
 Requires:       tesseract-ocr-traineddata-czech
 Requires:       libX11-6
-Requires:       xrandr
 Requires:       dejavu-fonts
 %else
+BuildRequires:  python3
 BuildRequires:  python3-pillow
 Requires:       python3 >= 3.9
 Requires:       python3-tkinter
@@ -31,9 +32,10 @@ Requires:       python3-gobject-base
 Requires:       tesseract
 Requires:       tesseract-langpack-ces
 Requires:       libX11
-Requires:       xrandr
 Requires:       dejavu-sans-fonts
 %endif
+# xrandr finds the primary monitor for the bar; without it (RHEL 10 has none) the bar uses Tk's screen size.
+Recommends:     xrandr
 Recommends:     xdg-desktop-portal
 Suggests:       xdg-utils
 
