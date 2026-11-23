@@ -78,7 +78,10 @@ def run(pgm):
     # take over 40 s on a many-core machine (measured on 16 cores, Tesseract 5.5).
     env["OMP_THREAD_LIMIT"] = "1"
     # Grey PGM over stdin: no screenshot is ever written to disk here.
-    cmd = [exe, "stdin", "stdout"] + extra + ["-l", "ces", "--psm", "3", "-c", "hocr_char_boxes=1", "hocr"]
+    # hOCR through -c rather than the "hocr" config file: with --tessdata-dir (Windows) that
+    # folder holds only the Czech data, and a missing config file silently means plain text.
+    cmd = [exe, "stdin", "stdout"] + extra + ["-l", "ces", "--psm", "3", "-c", "hocr_char_boxes=1",
+                                             "-c", "tessedit_create_hocr=1"]
     try:
         res = subprocess.run(cmd, input=pgm, capture_output=True, env=env, timeout=60, **_flags())
     except subprocess.TimeoutExpired:
