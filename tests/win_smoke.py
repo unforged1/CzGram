@@ -49,7 +49,18 @@ def screenshot_and_ocr():
                              fill=20, font=font)
     res = ocr.run(capture._pgm(img.width, img.height, img.tobytes()))
     text = " ".join(res.lines)
-    check("OCR reads Czech", "Maminka" in text and "doma" in text, text[:120])
+    check("OCR reads Czech", "Maminka" in text and "doma" in text,
+          "%r ok=%s reason=%r conf=%.0f" % (text[:120], res.ok, res.reason, res.mean_conf))
+    if "Maminka" not in text:
+        # Diagnosis: the same image through a file and through stdin, straight from Tesseract.
+        exe, extra = ocr._tesseract()
+        png = os.path.join(config.runtime_dir(), "diag.png")
+        img.save(png)
+        pgm = capture._pgm(img.width, img.height, img.tobytes())
+        for label, cmd, data in (("file", [exe, png, "stdout"] + extra + ["-l", "ces"], None),
+                                 ("stdin", [exe, "stdin", "stdout"] + extra + ["-l", "ces"], pgm)):
+            r = subprocess.run(cmd, input=data, capture_output=True, timeout=60)
+            print("DIAG %s rc=%d out=%r err=%r" % (label, r.returncode, r.stdout[:200], r.stderr[-300:]))
     path = os.path.join(config.runtime_dir(), "smoke.png")
     img.save(path)
     out = subprocess.run([sys.executable, "-m", "czgram", "--scan-file", path], cwd=REPO,
