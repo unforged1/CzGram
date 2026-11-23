@@ -15,6 +15,7 @@ Thanks for helping. Bug reports, new grammar rules, OCR fixes and ports are all 
 | --- | --- | --- |
 | `main` | The Debian/Ubuntu version, the default | Anything that applies everywhere |
 | `arch-based` | `main` plus the Arch Linux `PKGBUILD` | Arch packaging |
+| `rpm-based` | `arch-based` plus the RPM spec for Fedora, RHEL and openSUSE | RPM packaging |
 | `macos` | `arch-based` plus the macOS port and its CI | macOS code and the macOS installer |
 | `windows` | `main` plus the Windows port and its CI (experimental; may be dropped) | Windows code and the Windows installer |
 | `experimental` | Work in progress | Only when asked |
