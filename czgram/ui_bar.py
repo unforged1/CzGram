@@ -133,7 +133,8 @@ class Bar:
         self.offer_box = tk.Frame(outer, bg=BG)
         self.offer = tk.Label(self.offer_box, bg=BG, fg=HINT, font=(FONT, 9, "bold"), anchor="w", justify="left")
         self.offer.pack(side="left", fill="x", expand=True)
-        self.offer_pill = tk.Canvas(self.offer_box, bg=BG, highlightthickness=0, bd=0)
+        self.offer_pill = tk.Canvas(self.offer_box, bg=BG, highlightthickness=0, bd=0, width=0, height=0)
+        self.pill_width = 0  # set when it's drawn; Tk on Windows reports a new canvas's width as "10c"
         self.offer_pill.pack(side="right", padx=(8, 0))
         self.root.bind("<Escape>", lambda _e: self.dismiss())
 
@@ -222,7 +223,7 @@ class Bar:
         for label in (self.title, self.snippet, self.hint):
             label.configure(wraplength=wrap)
         self.notice.configure(wraplength=w - 20)
-        self.offer.configure(wraplength=max(120, w - 30 - int(self.offer_pill.cget("width") or 0)))
+        self.offer.configure(wraplength=max(120, w - 30 - self.pill_width))
         self.root.update_idletasks()
         h = self.root.winfo_reqheight()
         self.root.geometry("%dx%d+%d+%d" % (w, h, x0 + (sw - w) // 2, y0))
@@ -376,6 +377,7 @@ class Bar:
         c = self.offer_pill
         c.delete("all")
         c.configure(width=w, height=h)
+        self.pill_width = w
         r = h // 2
         # Two half circles and a box make the pill; Tk has no rounded rectangle of its own.
         c.create_oval(0, 0, 2 * r, h - 1, fill="#FFFFFF", outline="#FFFFFF")
