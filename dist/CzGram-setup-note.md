@@ -1,4 +1,4 @@
-# CzGram 1.9.0: setup note
+# CzGram 2.1.1: setup note
 
 CzGram is a Czech grammar helper. Press PrintScreen while solving an exercise, and a small bar at the top of the screen shows the rule for what it finds. It can also suggest an answer.
 
@@ -15,7 +15,7 @@ This is an early test version. It has only been tested on one computer (Kali Lin
 Open a terminal in the folder holding the file, then run:
 
 ```bash
-sudo apt install ./czgram_1.9.0_all.deb
+sudo apt install ./czgram_2.1.1_all.deb
 ```
 
 Open **CzGram** from your applications menu, choose your settings and press **Save**.
@@ -32,6 +32,7 @@ By default, everything stays on your computer and you get general rules. The fir
 - **Page code:** reads the browser tab directly. It needs the browser extension below.
 - **Selected word (manual):** highlight a word in any app, then press PrintScreen.
 - **Quick mode:** keeps reading the page and looks up each new question by itself. It needs the browser extension, and you still click the answers.
+- **Bulk mode:** when a page holds a whole set of questions, the bar offers to answer them all in one request. Double-tap **Alt** in the browser to accept (the bar's white button names the key; you can change it in settings). Each answer appears as you answer the one before. It needs the browser extension.
 
 ## Browser extension (optional)
 

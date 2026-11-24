@@ -1,7 +1,7 @@
 # Builds CzGram from this checkout for Arch Linux and Arch-based systems (Manjaro, EndeavourOS...).
 # Usage: cd packaging/arch && makepkg -si
 pkgname=czgram
-pkgver=2.1.0
+pkgver=2.1.1
 pkgrel=1
 pkgdesc="Czech grammar lookup on the PrintScreen key"
 arch=('any')
