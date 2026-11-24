@@ -19,7 +19,7 @@ get() {
 get version.svg  "$B/version-$VERSION-D97757?$S"
 get debian.svg   "$B/Debian%20based-native-A81D33?$S&logo=debian&logoColor=white"
 get arch.svg     "$B/Arch%20based-supported-1793D1?$S&logo=archlinux&logoColor=white"
-get macos.svg    "$B/macOS-supported-555555?$S&logo=apple&logoColor=white"
+get macos.svg    "$B/macOS-supported-C0C0C0?$S&logo=apple&logoColor=white"
 get windows.svg  "$B/Windows-experimental-0078D4?$S&logo=windows&logoColor=white"
 get rpm.svg      "$B/RHEL%20and%20RPM%20based-supported-EE0000?$S&logo=redhat&logoColor=white"
 get security.svg "$B/security-reviewed%20Nov%202026-2EA043?$S"
