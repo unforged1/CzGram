@@ -27,8 +27,9 @@ project.
 
 ## Reporting
 
-Contact the maintainer, [@unforged1](https://github.com/unforged1), on GitHub. Reports are handled privately, and the
-person reporting won't be identified without their consent.
+Email the maintainer at [unforged.crl@gmail.com](mailto:unforged.crl@gmail.com), or contact
+[@unforged1](https://github.com/unforged1) on GitHub. Reports are handled privately, and the person reporting won't be
+identified without their consent.
 
 ## What happens next
 
