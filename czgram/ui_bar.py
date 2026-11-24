@@ -128,8 +128,13 @@ class Bar:
         self.text.configure(state="disabled")
         self.text.bind("<Button-1>", lambda _e: self.finish_speaking())
         self.notice = tk.Label(outer, bg=BG, fg=MUTED, font=(FONT, 8), anchor="w", justify="left")
-        # Its own line, so token counts and sources never hide the bulk-mode offer.
-        self.offer = tk.Label(outer, bg=BG, fg=HINT, font=(FONT, 9, "bold"), anchor="w", justify="left")
+        # The bulk-mode offer sits in a footer packed at the bottom, so lines packed later (token
+        # counts, sources) go above it and it always ends the panel.
+        self.offer_box = tk.Frame(outer, bg=BG)
+        self.offer = tk.Label(self.offer_box, bg=BG, fg=HINT, font=(FONT, 9, "bold"), anchor="w", justify="left")
+        self.offer.pack(side="left", fill="x", expand=True)
+        self.offer_pill = tk.Canvas(self.offer_box, bg=BG, highlightthickness=0, bd=0)
+        self.offer_pill.pack(side="right", padx=(8, 0))
         self.root.bind("<Escape>", lambda _e: self.dismiss())
 
     def _button(self, parent, text, command):
@@ -217,7 +222,7 @@ class Bar:
         for label in (self.title, self.snippet, self.hint):
             label.configure(wraplength=wrap)
         self.notice.configure(wraplength=w - 20)
-        self.offer.configure(wraplength=w - 20)
+        self.offer.configure(wraplength=max(120, w - 30 - int(self.offer_pill.cget("width") or 0)))
         self.root.update_idletasks()
         h = self.root.winfo_reqheight()
         self.root.geometry("%dx%d+%d+%d" % (w, h, x0 + (sw - w) // 2, y0))
@@ -342,8 +347,7 @@ class Bar:
         if event == "bulk_offer":
             if not self.visible:
                 self.show()
-            self._set_offer("⚡ %d questions on this page. Double-tap Alt to answer them all at once (bulk mode)."
-                            % msg["count"])
+            self._set_offer("⚡ %d questions on this page: answer them all at once (bulk mode)." % msg["count"])
         elif event == "bulk_offer_end":
             self._set_offer("")
         elif event == "bulk_on":
@@ -355,12 +359,29 @@ class Bar:
             self._end_bulk(msg.get("reason", ""))
 
     def _set_offer(self, text):
-        self.offer.pack_forget()
+        self.offer_box.pack_forget()
         if text:
             self.offer.configure(text=text)
-            self.offer.pack(fill="x", padx=10, pady=(2, 4))
+            self._draw_pill("Double %s to Confirm" % config.BULK_KEYS[config.bulk_key(self.cfg)])
+            self.offer_box.pack(side="bottom", fill="x", padx=10, pady=(4, 8))
         if self.visible:
             self._place()
+
+    def _draw_pill(self, text):
+        """A white, rounded button-shaped label naming the confirm shortcut."""
+        import tkinter.font as tkfont
+        font = tkfont.Font(root=self.root, family=FONT, size=9, weight="bold")
+        h = font.metrics("linespace") + 10
+        w = font.measure(text) + 2 * h // 2 + 8
+        c = self.offer_pill
+        c.delete("all")
+        c.configure(width=w, height=h)
+        r = h // 2
+        # Two half circles and a box make the pill; Tk has no rounded rectangle of its own.
+        c.create_oval(0, 0, 2 * r, h - 1, fill="#FFFFFF", outline="#FFFFFF")
+        c.create_oval(w - 2 * r - 1, 0, w - 1, h - 1, fill="#FFFFFF", outline="#FFFFFF")
+        c.create_rectangle(r, 0, w - r - 1, h - 1, fill="#FFFFFF", outline="#FFFFFF")
+        c.create_text(w // 2, h // 2, text=text, fill=BG, font=font)
 
     def _start_bulk(self, items, title):
         self._set_offer("")

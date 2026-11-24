@@ -8,7 +8,7 @@ let port = null;
 
 // Runs inside the page. Emits simplified HTML of what's in view, using live form
 // state (value attributes in the source are often stale or absent).
-function pageSnapshot(full, armed) {
+function pageSnapshot(full, armed, key) {
   const SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "SVG", "CANVAS", "IFRAME", "OBJECT", "EMBED", "VIDEO", "AUDIO"]);
   const LIMIT = 400000;
   const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -22,15 +22,16 @@ function pageSnapshot(full, armed) {
     || SECRET.test([el.autocomplete, el.name, el.id].join(" "));
   let out = "";
 
-  // Bulk mode: a double tap of Alt accepts the offer, and each answer the user gives moves
-  // CzGram on to the next one. Listeners only count; they never read or change the page.
+  // Bulk mode: a double tap of the chosen key (Alt unless set otherwise in CzGram) accepts the
+  // offer, and each answer the user gives moves CzGram on to the next one. Listeners only count;
+  // they never read or change the page.
   const state = globalThis.__czgram || (globalThis.__czgram = (() => {
-    const st = { alt: 0, answers: 0, lastAltUp: 0, altClean: false, lastAnswer: 0, armedAt: 0 };
+    const st = { alt: 0, answers: 0, lastAltUp: 0, altClean: false, lastAnswer: 0, armedAt: 0, key: "Alt" };
     addEventListener("keydown", (e) => {
-      if (e.key === "Alt") { if (!e.repeat) st.altClean = true; } else { st.altClean = false; st.lastAltUp = 0; }
+      if (e.key === st.key) { if (!e.repeat) st.altClean = true; } else { st.altClean = false; st.lastAltUp = 0; }
     }, true);
     addEventListener("keyup", (e) => {
-      if (e.key !== "Alt" || !st.altClean) return;
+      if (e.key !== st.key || !st.altClean) return;
       const now = Date.now();
       // While CzGram is offering bulk mode, Alt mustn't open the browser's menu bar, or the
       // second tap would go to the menu instead of the page.
@@ -56,6 +57,7 @@ function pageSnapshot(full, armed) {
     return st;
   })());
   if (armed) state.armedAt = Date.now();
+  state.key = ["Alt", "Control", "Shift"].includes(key) ? key : "Alt";
 
   // Whatever is highlighted here, with its sentence, for the app's manual mode.
   function selectedText() {
@@ -123,7 +125,7 @@ function pageSnapshot(full, armed) {
   return `<czgram-state data-alt="${state.alt}" data-answers="${state.answers}"></czgram-state>` + selectedText() + out;
 }
 
-async function takeSnapshot(full, armed) {
+async function takeSnapshot(full, armed, key) {
   const win = await api.windows.getLastFocused();
   const [tab] = await api.tabs.query({ active: true, windowId: win.id });
   if (!tab) return { error: "no active tab" };
@@ -133,14 +135,14 @@ async function takeSnapshot(full, armed) {
       const res = await api.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
         func: pageSnapshot,
-        args: [!!full, !!armed],
+        args: [!!full, !!armed, String(key || "Alt")],
       });
       frames = res.map((r) => r.result);
     } else {
       // Firefox manifest v2
       frames = await api.tabs.executeScript(tab.id, {
         allFrames: true,
-        code: `(${pageSnapshot.toString()})(${full ? "true" : "false"}, ${armed ? "true" : "false"})`,
+        code: `(${pageSnapshot.toString()})(${full ? "true" : "false"}, ${armed ? "true" : "false"}, ${JSON.stringify(String(key || "Alt"))})`,
       });
     }
   } catch (e) {
@@ -170,7 +172,7 @@ function connect() {
     if (msg.cmd !== "snapshot") return;
     let reply;
     try {
-      reply = await takeSnapshot(msg.full, msg.armed);
+      reply = await takeSnapshot(msg.full, msg.armed, msg.key);
     } catch (e) {
       reply = { error: String(e.message || e) };
     }

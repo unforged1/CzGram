@@ -12,7 +12,7 @@ body:
     attributes:
       label: CzGram version
       description: The output of `czgram --version`.
-      placeholder: czgram 2.0.0
+      placeholder: czgram 2.1.0
     validations:
       required: true
   - type: dropdown
