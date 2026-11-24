@@ -19,10 +19,11 @@ AGENT_LABEL = "cz.czgram.hotkey"
 
 
 def key_text(text):
-    """UI text with PrintScreen swapped for the Mac shortcut, and Alt named as Macs label it."""
+    """UI text with PrintScreen swapped for the Mac shortcut, and Alt and Ctrl named as Macs label them."""
     if not IS_MAC:
         return text
-    return text.replace("PrintScreen", KEY_NAME).replace("Double-tap Alt", "Double-tap Option (⌥)")
+    return (text.replace("PrintScreen", KEY_NAME).replace("Double-tap Alt", "Double-tap Option (⌥)")
+            .replace("Double Alt ", "Double Option ").replace("Double Ctrl ", "Double Control "))
 
 
 # ---------------------------------------------------------------- capture
