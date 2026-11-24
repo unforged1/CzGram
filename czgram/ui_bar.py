@@ -143,6 +143,7 @@ class Bar:
         self.notice_base = ""
 
         self.root = tk.Tk(className="czgram")
+        self.root.report_callback_exception = _log_error
         self.root.withdraw()
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
@@ -765,17 +766,23 @@ class Bar:
                          start_new_session=True)
 
     def quit(self):
-        self._stop_watch()
-        self._stop_ai()
-        if self.scan is not None:
-            self.scan.close()
-        if IS_WINDOWS:
-            self.srv.close()
+        # Whatever fails while stopping the helpers, the socket file goes and the window closes:
+        # a file left behind would point the next PrintScreen at a bar that's gone.
         try:
-            os.unlink(config.ui_socket())
-        except OSError:
-            pass
-        self.root.destroy()
+            self._stop_watch()
+            self._stop_ai()
+            if self.scan is not None:
+                self.scan.close()
+        finally:
+            try:
+                if IS_WINDOWS:
+                    self.srv.close()
+            finally:
+                try:
+                    os.unlink(config.ui_socket())
+                except OSError:
+                    pass
+                self.root.destroy()
 
     # ---------------------------------------------------------- commands from other processes
 
@@ -881,6 +888,20 @@ def _offline_answer(item):
     if item.get("hint"):
         return item["hint"]
     return "%s: %s" % (item.get("title", ""), item.get("text", "").split("\n")[0])
+
+
+def _log_error(kind, value, tb):
+    """Tk callback errors go to bar-error.log in the private runtime folder as well as stderr,
+    which pythonw (Windows) doesn't have. The traceback holds code locations, not screen text."""
+    import traceback
+    text = "".join(traceback.format_exception(kind, value, tb))
+    if sys.stderr:
+        sys.stderr.write(text)
+    try:
+        with open(os.path.join(config.runtime_dir(), "bar-error.log"), "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+    except OSError:
+        pass
 
 
 def _shorten(text, limit=110):

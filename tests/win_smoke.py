@@ -128,6 +128,11 @@ def save_settings_and_hotkey():
     time.sleep(3)
     check("bar quits on request", ipc.send("quit"))
     check("bar removed its pipe file", wait_for(lambda: not os.path.exists(config.ui_socket()), 10))
+    log = os.path.join(config.runtime_dir(), "bar-error.log")
+    if os.path.exists(log):
+        with open(log, encoding="utf-8") as f:
+            print("bar-error.log:\n" + f.read(), flush=True)
+    check("bar raised no errors", not os.path.exists(log))
 
     ok, msg = shortcuts.restore()
     check("restore", ok, msg)
