@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/version.svg" alt="Version 2.1.0">
+  <img src="docs/badges/version.svg" alt="Version 2.1.1">
   <img src="docs/badges/debian.svg" alt="Debian based: native">
   <img src="docs/badges/arch.svg" alt="Arch based: supported">
   <img src="docs/badges/macos.svg" alt="macOS: supported">
@@ -80,7 +80,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_2.1.0_all.deb
+sudo apt install ./dist/czgram_2.1.1_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
@@ -146,7 +146,7 @@ To remove it, run `bash packaging/macos/uninstall.sh`.
 > (see the table below), and the Windows port may be dropped in a later release. Please report what works and what
 > doesn't in an issue.
 
-The Windows port lives on the `windows` branch, at the same version (2.0.0) as the other systems. Download it as a ZIP from GitHub (Code → Download ZIP, after
+The Windows port lives on the `windows` branch, at the same version as the other systems. Download it as a ZIP from GitHub (Code → Download ZIP, after
 switching to the `windows` branch) or clone it, then run the installer in PowerShell from the `CzGram` folder:
 
 ```powershell
