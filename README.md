@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0-D97757?style=for-the-badge" alt="Version 2.0.0">
+  <img src="https://img.shields.io/badge/version-2.1.0-D97757?style=for-the-badge" alt="Version 2.1.0">
   <img src="https://img.shields.io/badge/Debian%20based-native-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian based: native">
   <img src="https://img.shields.io/badge/Arch%20based-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch based: supported">
   <img src="https://img.shields.io/badge/macOS-supported-555555?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: supported">
@@ -32,7 +32,7 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | 🌐 **Page reading** | Reads the browser tab's HTML directly, with automatic fallback either way. |
 | 🖱️ **Manual mode** | Highlight any word and press PrintScreen to get the rule behind it. |
 | ⚡ **Quick mode** | Watches the page and answers each new question as it appears. It never clicks for you. |
-| 💻 **Bulk mode** (new) | A whole set of questions on one page? Double-tap Alt: one request answers them all, and each answer appears as you answer the one before. |
+| 💻 **Bulk mode** | A whole set of questions on one page? Double-tap Alt (or a key you choose): one request answers them all, and each answer appears as you answer the one before. |
 | 📚 **Offline rules** | Listed words (vyjmenovaná slova), hard/soft consonants, s/z/vz, z/ze, s/se, capital letters and more. |
 | 🤖 **AI answers** | Optional. Your Claude plan, an Anthropic key, or another provider, at about 960 input tokens per lookup. |
 | 🔥 **Speed mode** | With Opus or Fable the bar turns blue and the mascot catches fire and runs. |
@@ -80,7 +80,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_2.0.0_all.deb
+sudo apt install ./dist/czgram_2.1.0_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
@@ -135,11 +135,11 @@ Then install the package from `dist/`. The package manager brings in Tesseract w
 (`tesseract-langpack-ces` on Fedora and RHEL, `tesseract-ocr-traineddata-czech` on openSUSE), Tk and the rest:
 
 ```bash
-sudo dnf install ./dist/czgram-2.0.0-1.*.noarch.rpm
+sudo dnf install ./dist/czgram-2.1.0-1.*.noarch.rpm
 ```
 
 ```bash
-sudo zypper install --allow-unsigned-rpm ./dist/czgram-2.0.0-1.*.noarch.rpm
+sudo zypper install --allow-unsigned-rpm ./dist/czgram-2.1.0-1.*.noarch.rpm
 ```
 
 The first is for Fedora and RHEL, the second for openSUSE. The package isn't signed, because you built it yourself.
@@ -215,6 +215,7 @@ Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` 
 | Minimize RAM usage | Closes the bar when dismissed and skips 2x OCR upscaling. |
 | Claude mascot | Animated, typed-out explanation. Click it to skip the animation. |
 | Language | Explanations in English or Czech. |
+| Bulk mode shortcut | The key to double-tap to confirm bulk mode: Alt (default), Ctrl or Shift. |
 | AI answers | Optional, off by default. Gives a specific answer in place of the general rule. |
 
 ## 🧭 Modes
@@ -232,11 +233,14 @@ detection turns quick mode off. Like all AI answers, the highlighted text and se
 <summary><b>💻 Bulk mode</b> (new in 2.0): a whole page of questions in one request</summary>
 
 When CzGram reads a tab in page-code mode, it reads the whole page, including what's scrolled out of view. If the
-page holds a set of two or more questions, such as a worksheet or a form, the bar offers bulk mode:
+page holds a set of two or more questions, such as a worksheet or a form, the bar offers bulk mode at the bottom of
+the panel, next to a white, rounded **Double Alt to Confirm** button:
 
-> ⚡ 6 questions on this page. Double-tap Alt to answer them all at once (bulk mode).
+> ⚡ 6 questions on this page: answer them all at once (bulk mode). &nbsp; `Double Alt to Confirm`
 
-Double-tap **Alt** in the browser to accept. CzGram sends every question in **one request** and shows the answers one
+Double-tap **Alt** in the browser to accept. To use another key, choose **Alt**, **Ctrl** or **Shift** under
+**Settings → Quick mode** (or set `"bulk_key"` to `"Alt"`, `"Control"` or `"Shift"` in `config.json`); the button
+then names that key. CzGram sends every question in **one request** and shows the answers one
 at a time, starting with the first. **Answer it on the page and the next answer appears by itself**, with no further
 requests. ◀ ▶ let you look ahead or back without changing your place. The mascot sits at its laptop and types flat
 out while bulk mode is on.
@@ -251,8 +255,7 @@ out while bulk mode is on.
   about 1k for each separate lookup.
 - Like the rest of CzGram, it never clicks or types on the page.
 
-After installing 2.0, reload the browser extension (version 2.0.0), which adds whole-page reading and the Alt and
-answer counting.
+After installing 2.1, reload the browser extension (version 2.1.0), which lets the confirm key be changed.
 </details>
 
 <details>
@@ -293,7 +296,7 @@ Reading HTML needs a small extension, added once. The app's settings can open it
 
 The extension acts only when CzGram asks and sends what it reads only to the local app. It reads the active tab's visible
 content, or the whole page, scrolled-out parts included, when CzGram looks for a set of questions for bulk mode. Once
-CzGram has read a tab, the extension also counts double taps of Alt and the answers you give there, so bulk mode can
+CzGram has read a tab, the extension also counts double taps of the bulk-mode key (Alt unless you change it) and the answers you give there, so bulk mode can
 follow along; it counts them and nothing else, never what you type or click. It does need permission to read all sites
 to be able to do this. It never reads password, card, one-time-code or hidden fields, and it sends at most 1 MB per page.
 See [Security](#security).
@@ -385,7 +388,7 @@ data on your computer and out of reach of web pages.
 | 🔑 API keys | Stored in `~/.config/czgram/config.json`, readable only by you, masked in settings and never logged. |
 | 🤖 Claude Code | Runs with no tools, no MCP servers, no settings and no API key from your environment, in an empty folder. Text on screen can only change the answer, never make it act. |
 | 🌐 Other AI providers | Redirects are refused, so your key is never resent to another address. Unencrypted `http://` addresses off your computer get a warning. |
-| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. For bulk mode it counts Alt double taps and answers, without recording which keys, text or choices. |
+| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. For bulk mode it counts double taps of the chosen key and answers, without recording which keys, text or choices. |
 | 🔌 Local sockets | Private to your user from the moment they're created, inside a folder only you can open. Oversized messages are refused. |
 | ⏱️ Page text | Long or crafted lines can't stall the analyzer: patterns run in linear time and lines are capped at 2,000 characters. |
 | 📦 Installers | The macOS installer downloads the Czech OCR data from a pinned commit and checks its hash before using it. |
