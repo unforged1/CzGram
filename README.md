@@ -3,14 +3,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.1.0-D97757?style=for-the-badge" alt="Version 2.1.0">
-  <img src="https://img.shields.io/badge/Debian%20based-native-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian based: native">
-  <img src="https://img.shields.io/badge/Arch%20based-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch based: supported">
-  <img src="https://img.shields.io/badge/macOS-supported-555555?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: supported">
-  <img src="https://img.shields.io/badge/Windows-experimental-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows: experimental">
-  <img src="https://img.shields.io/badge/RHEL%20and%20RPM%20based-supported-EE0000?style=for-the-badge&logo=redhat&logoColor=white" alt="RHEL and RPM based: supported">
-  <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
-  <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
+  <img src="docs/badges/version.svg" alt="Version 2.1.0">
+  <img src="docs/badges/debian.svg" alt="Debian based: native">
+  <img src="docs/badges/arch.svg" alt="Arch based: supported">
+  <img src="docs/badges/macos.svg" alt="macOS: supported">
+  <img src="docs/badges/windows.svg" alt="Windows: experimental">
+  <img src="docs/badges/rpm.svg" alt="RHEL and RPM based: supported">
+  <img src="docs/badges/security.svg" alt="Security reviewed November 2026">
+  <img src="docs/badges/license.svg" alt="MIT license">
 </p>
 
 <p align="center">
