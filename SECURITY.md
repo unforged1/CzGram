@@ -7,9 +7,10 @@ thank you for reporting them responsibly.
 
 | Version | Supported |
 | --- | --- |
+| 2.1.x | ✅ Security fixes |
 | 2.0.x | ✅ Security fixes |
 | 1.9.x | ✅ Security fixes |
-| 1.8.x and older | ❌ Update to 2.0 |
+| 1.8.x and older | ❌ Update to 2.1 |
 
 Fixes are released on every branch that carries the affected code (`main`, `arch-based`, `macos` and
 `experimental`). After updating, reload the browser extension too, since some fixes live there.

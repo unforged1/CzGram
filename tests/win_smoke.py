@@ -161,10 +161,10 @@ def native_host_bat():
         reply = bridge.read_page(timeout=5)
         # The newline would come back as \r\n if the host's stdio weren't in binary mode.
         check("page through the host", reply.get("url") == "https://example.cz/\n", reply)
-        reply = bridge.read_page(timeout=5, full=True, armed=True)
+        reply = bridge.read_page(timeout=5, full=True, armed=True, key="Shift")
         last = requests[-1] if requests else {}
         check("bulk request reaches the browser", reply.get("url") and last.get("full") is True
-              and last.get("armed") is True, last)
+              and last.get("armed") is True and last.get("key") == "Shift", last)
     finally:
         proc.stdin.close()
         proc.wait(timeout=10)
