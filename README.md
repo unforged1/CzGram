@@ -39,6 +39,14 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | 🔢 **Token tracking** | See what CzGram's Claude lookups have used today, this week and overall. |
 | 🛡️ **Security reviewed** | Keys stay private, secret form fields are never read, and web pages can't stall it. [Details](#security) |
 
+## 📝 What's new
+
+| Version | Changes |
+| --- | --- |
+| **2.1.1** (current) | Bug fixes. A bulk-mode offer after a PrintScreen scan now ends after 45 seconds even when the browser can't be reached. Changing the bulk-mode key takes effect without restarting quick mode. On Windows, the bulk-mode button no longer stops the bar from closing cleanly. The Debian, Ubuntu and Arch packages are now built, installed and tested automatically, like the others. |
+| **2.1.0** | The bulk-mode offer sits at the bottom of the bar, with a white **Double Alt to Confirm** button. The key can be Alt, Ctrl or Shift (Settings → Quick mode). Browser extension 2.1.0: reload it after updating. |
+| **2.0.0** | [Bulk mode](#-modes): a whole page of questions in one request. Browser extension 2.0.0. Packages for Fedora, RHEL and openSUSE on the `rpm-based` branch, and an experimental Windows port. |
+
 ## 🐧 Supported systems
 
 | System | Status | How to install |
