@@ -17,6 +17,15 @@ import tempfile
 
 
 MAX_MESSAGE = 8 * 1024 * 1024  # the extension sends at most about 1 MB
+BULK_KEYS = (b"Alt", b"Control", b"Shift")  # as in czgram/config.py; anything else means Alt
+
+
+def snapshot_request(words, next_id):
+    """The extension's message for a "snapshot [full] [armed] [key=K]" request."""
+    key = next((w[4:] for w in words[1:] if w.startswith(b"key=")), b"Alt")
+    # "full": the whole page, not just what's in view. "armed": a bulk offer is open.
+    return {"id": next_id, "cmd": "snapshot", "full": b"full" in words[1:], "armed": b"armed" in words[1:],
+            "key": (key if key in BULK_KEYS else b"Alt").decode("ascii")}
 
 
 def runtime_dir():
@@ -82,9 +91,7 @@ def main():
                 if not words or words[0] != b"snapshot":
                     continue
                 next_id += 1
-                # "full": the whole page, not just what's in view. "armed": a bulk offer is open.
-                write_message(stdout, {"id": next_id, "cmd": "snapshot",
-                                       "full": b"full" in words[1:], "armed": b"armed" in words[1:]})
+                write_message(stdout, snapshot_request(words, next_id))
                 reply = None
                 while reply is None:
                     r, _, _ = select.select([stdin], [], [], 3.5)

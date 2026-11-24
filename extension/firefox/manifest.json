@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "CzGram connector",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Lets the CzGram desktop app read the active tab when you press PrintScreen.",
   "browser_specific_settings": { "gecko": { "id": "czgram@local", "strict_min_version": "115.0" } },
   "permissions": ["nativeMessaging", "tabs", "<all_urls>"],

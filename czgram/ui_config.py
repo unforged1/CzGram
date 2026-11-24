@@ -57,6 +57,7 @@ class ConfigWindow:
             "api_key": tk.StringVar(value=self.cfg["api_key"]),
             "model": tk.StringVar(value=self.cfg["model"]),
             "bind_printscreen": tk.BooleanVar(value=self.cfg["bind_printscreen"]),
+            "bulk_key": tk.StringVar(value=config.bulk_key(self.cfg)),
         }
         body = ttk.Frame(self.root, padding=18)
         body.pack(fill="both", expand=True)
@@ -103,6 +104,13 @@ class ConfigWindow:
                          "the browser connector, and you still click the answers yourself. With AI "
                          "answers on, each new question makes one request. Manual detection "
                          "turns it off.")
+        bulk_row = ttk.Frame(left)
+        bulk_row.pack(anchor="w", pady=(6, 0))
+        ttk.Label(bulk_row, text="Confirm bulk mode with a double tap of").pack(side="left", padx=(0, 6))
+        ttk.Combobox(bulk_row, textvariable=v["bulk_key"], values=tuple(config.BULK_KEYS), width=8,
+                     state="readonly").pack(side="left")
+        self._note(left, "Bulk mode answers a whole page of questions in one request. The bar shows the shortcut "
+                         "when it offers bulk mode.")
 
         self._section(left, "Claude tokens used by CzGram")
         token_row = ttk.Frame(left)

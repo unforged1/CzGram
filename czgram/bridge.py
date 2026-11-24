@@ -41,13 +41,15 @@ def connected():
     return bool(glob.glob(os.path.join(config.runtime_dir(), "bridge-*.sock")))
 
 
-def read_page(timeout=4.0, full=False, armed=False):
+def read_page(timeout=4.0, full=False, armed=False, key="Alt"):
     """The raw reply from the focused browser, or the first that answered, or {"error": ...}.
 
     full: the whole page rather than what's in view. armed: a bulk-mode offer is open, so the
-    page keeps Alt from opening the browser's menu bar.
+    page keeps Alt from opening the browser's menu bar. key: the key whose double taps the page
+    counts for bulk mode (one of config.BULK_KEYS).
     """
-    request = b" ".join([b"snapshot"] + [b"full"] * full + [b"armed"] * armed)
+    request = b" ".join([b"snapshot"] + [b"full"] * full + [b"armed"] * armed +
+                        [b"key=" + key.encode("ascii", "ignore")])
     socks = glob.glob(os.path.join(config.runtime_dir(), "bridge-*.sock"))
     if not socks:
         return {"error": "the browser connector isn't active "
