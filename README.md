@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/version.svg" alt="Version 2.1.0">
+  <img src="docs/badges/version.svg" alt="Version 2.1.1">
   <img src="docs/badges/debian.svg" alt="Debian based: native">
   <img src="docs/badges/arch.svg" alt="Arch based: supported">
   <img src="docs/badges/macos.svg" alt="macOS: supported">
@@ -79,7 +79,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_2.1.0_all.deb
+sudo apt install ./dist/czgram_2.1.1_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.

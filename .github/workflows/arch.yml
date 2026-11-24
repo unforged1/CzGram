@@ -1,0 +1,70 @@
+name: Arch
+
+on:
+  push:
+    branches: [arch-based]
+    paths-ignore:   # docs and community files don't need a build
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  arch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: archlinux:latest
+    steps:
+      - name: Build tools, dependencies and test fonts
+        # The PKGBUILD's dependencies are installed here, so makepkg can run as a plain user.
+        run: |
+          pacman -Syu --noconfirm --needed base-devel git python tk python-pillow python-gobject glib2 \
+            tesseract tesseract-data-ces libx11 xorg-xrandr ttf-dejavu ttf-liberation noto-fonts
+          useradd -m builder
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0, pinned
+        with:
+          persist-credentials: false
+      - name: Build the package with makepkg
+        run: |
+          chown -R builder .
+          su builder -c "cd packaging/arch && makepkg -f --noconfirm"
+      - name: Install it with pacman
+        run: |
+          pacman -U --noconfirm packaging/arch/czgram-*.pkg.tar.zst
+          pacman -Qi czgram | grep -E '^(Name|Version)'
+      - name: Installed command
+        run: |
+          czgram --version
+          czgram --usage
+          test -x /usr/lib/czgram/czgram/nmhost.py
+          test -f /usr/share/czgram/extension/chromium/manifest.json
+          tesseract --list-langs 2>&1 | grep -x ces
+      - name: Unit tests
+        run: PYTHONPATH=. python -m unittest discover -s tests
+      - name: OCR benchmarks
+        run: |
+          PYTHONPATH=. python tests/render_sz.py
+          PYTHONPATH=. python tests/render_caps.py
+      - name: Scan an exercise with the installed app
+        run: |
+          python - <<'EOF'
+          import glob, json, subprocess
+          from PIL import Image, ImageDraw, ImageFont
+          font = ImageFont.truetype(glob.glob("/usr/share/fonts/**/DejaVuSans.ttf", recursive=True)[0], 32)
+          img = Image.new("L", (1200, 300), 250)
+          ImageDraw.Draw(img).text((40, 100), "Doplň: Maminka b_dlí doma. Vidím (mě/mně) v zrcadle.", fill=20, font=font)
+          img.save("/tmp/exercise.png")
+          out = subprocess.run(["czgram", "--scan-file", "/tmp/exercise.png"], capture_output=True, text=True, check=True)
+          result = [json.loads(l) for l in out.stdout.splitlines() if '"result"' in l][-1]
+          found = [i["snippet"] for i in result["items"]]
+          print("found:", found)
+          assert "b_dlí" in found and "(mě/mně)" in found, found
+          EOF
+      - name: Remove it
+        run: |
+          pacman -R --noconfirm czgram
+          ! test -e /usr/lib/czgram
