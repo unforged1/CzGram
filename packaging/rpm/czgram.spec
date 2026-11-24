@@ -3,7 +3,7 @@
 # The files are installed by packaging/stage.sh, the same script the .deb and Arch packages use.
 
 Name:           czgram
-Version:        2.1.0
+Version:        2.1.1
 Release:        1%{?dist}
 Summary:        Czech grammar lookup on the PrintScreen key
 License:        MIT
@@ -65,6 +65,9 @@ python3 -m compileall -q -d /usr/lib/czgram %{buildroot}/usr/lib/czgram
 %{_datadir}/licenses/%{name}
 
 %changelog
+* Tue Nov 24 2026 unforged <unforged.crl@gmail.com> - 2.1.1-1
+- Bulk offer after a scan lapses without a browser; a changed bulk key applies at once
+
 * Tue Nov 24 2026 unforged <unforged.crl@gmail.com> - 2.1.0-1
 - Bulk mode offer at the bottom of the bar with a Double Alt to Confirm button; the key is configurable
 

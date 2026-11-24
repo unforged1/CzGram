@@ -173,6 +173,8 @@ def main(argv=()):
     while True:
         started = time.monotonic()
         if bulk.state != "on" and polls % FULL_READ_EVERY == 0:
+            # Settings may have changed the key since this started; the bar shows the new one.
+            key = config.bulk_key(config.load())
             full = bridge.read_page(full=True, key=key)
             if not full.get("error"):
                 for event in bulk.look(full):
@@ -180,7 +182,11 @@ def main(argv=()):
         polls += 1
         reply = bridge.read_page(armed=bulk.state == "offered", key=key)
         if reply.get("error"):
-            if not offer_only:
+            if offer_only:
+                # Without a browser there's nothing to offer; don't outlive the offer's time.
+                if bulk.state != "on" and time.monotonic() - started_at > OFFER_ONLY_S:
+                    return 0
+            else:
                 status(reply["error"])
             time.sleep(2)
             continue

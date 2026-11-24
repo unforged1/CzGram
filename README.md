@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/version.svg" alt="Version 2.1.0">
+  <img src="docs/badges/version.svg" alt="Version 2.1.1">
   <img src="docs/badges/debian.svg" alt="Debian based: native">
   <img src="docs/badges/arch.svg" alt="Arch based: supported">
   <img src="docs/badges/macos.svg" alt="macOS: supported">
@@ -80,7 +80,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_2.1.0_all.deb
+sudo apt install ./dist/czgram_2.1.1_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
@@ -135,11 +135,11 @@ Then install the package from `dist/`. The package manager brings in Tesseract w
 (`tesseract-langpack-ces` on Fedora and RHEL, `tesseract-ocr-traineddata-czech` on openSUSE), Tk and the rest:
 
 ```bash
-sudo dnf install ./dist/czgram-2.1.0-1.*.noarch.rpm
+sudo dnf install ./dist/czgram-2.1.1-1.*.noarch.rpm
 ```
 
 ```bash
-sudo zypper install --allow-unsigned-rpm ./dist/czgram-2.1.0-1.*.noarch.rpm
+sudo zypper install --allow-unsigned-rpm ./dist/czgram-2.1.1-1.*.noarch.rpm
 ```
 
 The first is for Fedora and RHEL, the second for openSUSE. The package isn't signed, because you built it yourself.
