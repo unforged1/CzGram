@@ -7,7 +7,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 
-from . import claude_code, config, external, install, ipc, ocr, usage
+from . import claude_code, config, external, ijp, install, ipc, ocr, usage
 
 BG = "#F4F1EA"
 FG = "#1F1E1D"
@@ -57,6 +57,8 @@ class ConfigWindow:
             "api_key": tk.StringVar(value=self.cfg["api_key"]),
             "model": tk.StringVar(value=self.cfg["model"]),
             "bind_printscreen": tk.BooleanVar(value=self.cfg["bind_printscreen"]),
+            "bulk_key": tk.StringVar(value=config.bulk_key(self.cfg)),
+            "ijp_check": tk.StringVar(value=ijp.mode(self.cfg)),
         }
         body = ttk.Frame(self.root, padding=18)
         body.pack(fill="both", expand=True)
@@ -103,6 +105,13 @@ class ConfigWindow:
                          "the browser connector, and you still click the answers yourself. With AI "
                          "answers on, each new question makes one request. Manual detection "
                          "turns it off.")
+        bulk_row = ttk.Frame(left)
+        bulk_row.pack(anchor="w", pady=(6, 0))
+        ttk.Label(bulk_row, text="Confirm bulk mode with a double tap of").pack(side="left", padx=(0, 6))
+        ttk.Combobox(bulk_row, textvariable=v["bulk_key"], values=tuple(config.BULK_KEYS), width=8,
+                     state="readonly").pack(side="left")
+        self._note(left, "Bulk mode answers a whole page of questions in one request. The bar shows the shortcut "
+                         "when it offers bulk mode.")
 
         self._section(left, "Claude tokens used by CzGram")
         token_row = ttk.Frame(left)
@@ -129,6 +138,14 @@ class ConfigWindow:
         ttk.Label(lang, text="Language:").pack(side="left", padx=(0, 8))
         ttk.Radiobutton(lang, text="English", value="en", variable=v["language"]).pack(side="left")
         ttk.Radiobutton(lang, text="Čeština", value="cs", variable=v["language"]).pack(side="left", padx=8)
+        check = ttk.Frame(right)
+        check.pack(anchor="w", pady=(4, 0))
+        ttk.Label(check, text="Check in the IJP:").pack(side="left", padx=(0, 8))
+        for value, label in (("off", "Off"), ("auto", "When needed"), ("always", "Always")):
+            ttk.Radiobutton(check, text=label, value=value, variable=v["ijp_check"]).pack(side="left", padx=(0, 8))
+        self._note(right, "Answers follow the Internetová jazyková příručka (prirucka.ujc.cas.cz), and the bar "
+                          "links the word to look up there: always, or when the rules can't decide or the AI "
+                          "isn't sure. CzGram never contacts the site; the link opens it in your browser.")
 
         self._section(right, "AI answers (optional)")
         ttk.Checkbutton(right, text="Ask an AI for specific answers", variable=v["use_claude"],

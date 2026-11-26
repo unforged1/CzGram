@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tkinter as tk
 
-from . import config, speed
+from . import config, ijp, speed
 
 BG = "#1F1E1D"
 PANEL = "#2B2A28"
@@ -128,8 +128,20 @@ class Bar:
         self.text.configure(state="disabled")
         self.text.bind("<Button-1>", lambda _e: self.finish_speaking())
         self.notice = tk.Label(outer, bg=BG, fg=MUTED, font=(FONT, 8), anchor="w", justify="left")
-        # Its own line, so token counts and sources never hide the bulk-mode offer.
-        self.offer = tk.Label(outer, bg=BG, fg=HINT, font=(FONT, 9, "bold"), anchor="w", justify="left")
+        # A link to the word's entry in the Internetová jazyková příručka, opened in the browser.
+        self.ijp_word = None
+        self.ijp_cache = {}
+        self.ijp_link = tk.Label(outer, bg=BG, fg=HINT, font=(FONT, 9, "underline"), anchor="w",
+                                 justify="left", cursor="hand2")
+        self.ijp_link.bind("<Button-1>", lambda _e: self._open_ijp())
+        # The bulk-mode offer sits in a footer packed at the bottom, so lines packed later (token
+        # counts, sources) go above it and it always ends the panel.
+        self.offer_box = tk.Frame(outer, bg=BG)
+        self.offer = tk.Label(self.offer_box, bg=BG, fg=HINT, font=(FONT, 9, "bold"), anchor="w", justify="left")
+        self.offer.pack(side="left", fill="x", expand=True)
+        self.offer_pill = tk.Canvas(self.offer_box, bg=BG, highlightthickness=0, bd=0, width=0, height=0)
+        self.pill_width = 0  # set when it's drawn; Tk on Windows reports a new canvas's width as "10c"
+        self.offer_pill.pack(side="right", padx=(8, 0))
         self.root.bind("<Escape>", lambda _e: self.dismiss())
 
     def _button(self, parent, text, command):
@@ -217,7 +229,7 @@ class Bar:
         for label in (self.title, self.snippet, self.hint):
             label.configure(wraplength=wrap)
         self.notice.configure(wraplength=w - 20)
-        self.offer.configure(wraplength=w - 20)
+        self.offer.configure(wraplength=max(120, w - 30 - self.pill_width))
         self.root.update_idletasks()
         h = self.root.winfo_reqheight()
         self.root.geometry("%dx%d+%d+%d" % (w, h, x0 + (sw - w) // 2, y0))
@@ -342,8 +354,7 @@ class Bar:
         if event == "bulk_offer":
             if not self.visible:
                 self.show()
-            self._set_offer("⚡ %d questions on this page. Double-tap Alt to answer them all at once (bulk mode)."
-                            % msg["count"])
+            self._set_offer("⚡ %d questions on this page: answer them all at once (bulk mode)." % msg["count"])
         elif event == "bulk_offer_end":
             self._set_offer("")
         elif event == "bulk_on":
@@ -355,12 +366,30 @@ class Bar:
             self._end_bulk(msg.get("reason", ""))
 
     def _set_offer(self, text):
-        self.offer.pack_forget()
+        self.offer_box.pack_forget()
         if text:
             self.offer.configure(text=text)
-            self.offer.pack(fill="x", padx=10, pady=(2, 4))
+            self._draw_pill("Double %s to Confirm" % config.BULK_KEYS[config.bulk_key(self.cfg)])
+            self.offer_box.pack(side="bottom", fill="x", padx=10, pady=(4, 8))
         if self.visible:
             self._place()
+
+    def _draw_pill(self, text):
+        """A white, rounded button-shaped label naming the confirm shortcut."""
+        import tkinter.font as tkfont
+        font = tkfont.Font(root=self.root, family=FONT, size=9, weight="bold")
+        h = font.metrics("linespace") + 10
+        w = font.measure(text) + 2 * h // 2 + 8
+        c = self.offer_pill
+        c.delete("all")
+        c.configure(width=w, height=h)
+        self.pill_width = w
+        r = h // 2
+        # Two half circles and a box make the pill; Tk has no rounded rectangle of its own.
+        c.create_oval(0, 0, 2 * r, h - 1, fill="#FFFFFF", outline="#FFFFFF")
+        c.create_oval(w - 2 * r - 1, 0, w - 1, h - 1, fill="#FFFFFF", outline="#FFFFFF")
+        c.create_rectangle(r, 0, w - r - 1, h - 1, fill="#FFFFFF", outline="#FFFFFF")
+        c.create_text(w // 2, h // 2, text=text, fill=BG, font=font)
 
     def _start_bulk(self, items, title):
         self._set_offer("")
@@ -392,6 +421,8 @@ class Bar:
             return
         if "answer" in msg:
             self.bulk["answers"].setdefault(msg["answer"], msg["text"])
+            if msg.get("ijp"):
+                self.bulk.setdefault("ijp", {})[msg["answer"]] = msg["ijp"]
             if msg["answer"] == self.bulk["index"] + 1:
                 self.show_bulk()
         elif "model" in msg:
@@ -433,7 +464,8 @@ class Bar:
         self._append(answer or ("Working on all %d answers…" % len(bulk["items"]) if not bulk["done"]
                                 else "No answer came back for this one."))
         self._fit_text()
-        self._place()
+        word = bulk.get("ijp", {}).get(n)
+        self._set_ijp(word if self.cfg["use_claude"] else self._offline_ijp(item))
 
     def _bulk_step(self, delta):
         """◀ ▶ in bulk mode only look around; the page's answers still decide what's next."""
@@ -443,6 +475,7 @@ class Bar:
 
     def _end_bulk(self, reason):
         self.bulk = None
+        self._set_ijp(None)
         self._stop_ai()
         if self.mascot:
             self.mascot.rest = "busy" if self.watch is not None and not self.watch_offer_only else "idle"
@@ -464,6 +497,7 @@ class Bar:
         self.snippet.configure(text="")
         self.hint.pack_forget()
         self.text.pack_forget()
+        self.ijp_link.pack_forget()
         self.notice.pack_forget()
         for w in (self.prev_btn, self.count, self.next_btn):
             w.pack_forget()
@@ -490,6 +524,7 @@ class Bar:
                 "Nothing that looks like a Czech gap or question is on screen." if not note else ""))
             self.hint.pack_forget()
             self.text.pack_forget()
+            self.ijp_link.pack_forget()
             self._set_notice(note)
             if self.mascot:
                 self.mascot.set_state("sad")
@@ -503,6 +538,7 @@ class Bar:
 
     def show_item(self):
         self._stop_ai()
+        self._set_ijp(None)
         item = self.items[self.index]
         self.title.configure(text=item["title"])
         context = item.get("context")
@@ -528,6 +564,10 @@ class Bar:
         self.say(cached or item["text"])
         if self.cfg["use_claude"] and not cached:
             self._start_ai(item)
+        elif cached:
+            self._set_ijp(self.ijp_cache.get((item["snippet"], item["line"])))
+        else:
+            self._set_ijp(self._offline_ijp(item))
 
     def step(self, delta):
         if self.bulk is not None:
@@ -597,6 +637,7 @@ class Bar:
                               "options": item.get("options", []),
                               "context": item.get("context", ""),
                               "selected": item.get("selected", False),
+                              "unsure": item.get("kind") == "gap" and item.get("suggest") in (None, "both"),
                               "exercise": item.get("exercise", "")}).encode()
         self.ai = Child(self.root, ["czgram.ai"], self._on_ai_message, self._on_ai_exit, payload)
         if self.mascot and not self.pending:
@@ -618,11 +659,42 @@ class Bar:
                 self._place()
             self.ai_text += msg["text"]
             self.say(msg["text"])
+        elif "ijp" in msg:
+            self.ijp_cache[self.ai_key] = msg["ijp"]
+            self._set_ijp(msg["ijp"])
         elif "error" in msg:
             self._set_notice(msg["error"])
             self._place()
         elif msg.get("done"):
             self.ai_cache[self.ai_key] = self.ai_text
+
+    def _offline_ijp(self, item):
+        """Without the AI: the word to check, when the setting asks for it and the word is known."""
+        mode = ijp.mode(self.cfg)
+        if mode == "off" or (mode == "auto" and item.get("suggest") not in (None, "both")):
+            return None
+        snippet, suggest = item.get("snippet", ""), item.get("suggest")
+        if item.get("kind") == "word" or item.get("selected"):
+            return ijp.clean(snippet)
+        if suggest and suggest != "both" and snippet.count("_") == 1:
+            return ijp.clean(snippet.replace("_", suggest))
+        return None
+
+    def _set_ijp(self, word):
+        self.ijp_word = word if ijp.mode(self.cfg) != "off" else None
+        self.ijp_link.pack_forget()
+        if self.ijp_word and self.text.winfo_manager():
+            text = "Ověřit v IJP: %s" if self.cfg["language"] == "cs" else "Check in IJP: %s"
+            self.ijp_link.configure(text="📖 " + text % self.ijp_word)
+            self.ijp_link.pack(fill="x", padx=10, pady=(0, 4), after=self.text)
+        if self.visible:
+            self._place()
+
+    def _open_ijp(self):
+        # The user's own click opens the page in their browser; CzGram itself never fetches it.
+        if self.ijp_word:
+            import webbrowser
+            webbrowser.open(ijp.url(self.ijp_word))
 
     def _show_tokens(self, tokens):
         from .usage import short

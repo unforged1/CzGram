@@ -99,6 +99,11 @@ class ClaudeCode(unittest.TestCase):
         self.fake(self.script(INIT % "[]", SIGNED_OUT.replace("Not logged in · Please run /login", "Usage limit reached")))
         self.assertIn("usage limit", self.lookup()[0]["error"])
 
+    def test_ijp_line_becomes_a_link(self):
+        # The reply's "IJP: word" line reaches the bar as {"ijp": ...}, not as text.
+        self.fake(self.script(INIT % "[]", EVENT % "Dopl", EVENT % "ň y\\nIJ", EVENT % "P: bydlet", OK))
+        self.assertEqual(self.lookup(), [{"text": "Dopl"}, {"text": "ň y"}, {"ijp": "bydlet"}, {"done": True}])
+
     def test_crash(self):
         self.fake("sys.exit(1)\n")
         self.assertIn("without answering", self.lookup()[0]["error"])

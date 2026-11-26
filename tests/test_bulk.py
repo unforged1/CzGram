@@ -118,5 +118,76 @@ class OneRequest(unittest.TestCase):
         self.assertEqual(len(out.getvalue().splitlines()), 2)
 
 
+
+class BulkKey(unittest.TestCase):
+    """The confirm shortcut: set in config, carried to the extension, never anything but a known key."""
+
+    def test_config_falls_back_to_alt(self):
+        from czgram import config
+        self.assertEqual(config.bulk_key({"bulk_key": "Shift"}), "Shift")
+        for bad in ("", "Enter", "Alt; alert(1)", None):
+            self.assertEqual(config.bulk_key({"bulk_key": bad}), "Alt")
+        self.assertEqual(config.bulk_key({}), "Alt")
+
+    def test_host_passes_only_known_keys(self):
+        from czgram import nmhost
+        msg = nmhost.snapshot_request(b"snapshot full armed key=Control".split(), 7)
+        self.assertEqual(msg, {"id": 7, "cmd": "snapshot", "full": True, "armed": True, "key": "Control"})
+        self.assertEqual(nmhost.snapshot_request([b"snapshot"], 1)["key"], "Alt")
+        self.assertEqual(nmhost.snapshot_request([b"snapshot", b'key="});x'], 1)["key"], "Alt")
+
+    def test_bridge_sends_the_key(self):
+        from unittest import mock
+        from czgram import bridge
+        sent = []
+        with mock.patch.object(bridge.glob, "glob", return_value=["/x/bridge-1.sock"]), \
+                mock.patch.object(bridge, "_ask", lambda path, timeout, request: sent.append(request) or {"url": "u"}):
+            bridge.read_page(armed=True, key="Shift")
+        self.assertEqual(sent, [b"snapshot armed key=Shift"])
+
+
+
+class WatcherLoop(unittest.TestCase):
+    """The watcher's main loop, with the browser connection stubbed out."""
+
+    def run_loop(self, read_page, configs, polls_before_stop=None):
+        from unittest import mock
+        from czgram import watch
+        calls = {"n": 0}
+
+        def reader(**kw):
+            calls["n"] += 1
+            if polls_before_stop and calls["n"] > polls_before_stop:
+                raise KeyboardInterrupt  # ends a loop that would otherwise run forever
+            return read_page(**kw)
+
+        with mock.patch.object(watch.bridge, "read_page", side_effect=reader), \
+                mock.patch.object(watch.config, "load", side_effect=configs), \
+                mock.patch.object(watch.time, "sleep"), mock.patch.object(watch, "OFFER_ONLY_S", 0), \
+                redirect_stdout(io.StringIO()):
+            try:
+                return watch.main(["--offer"])
+            except KeyboardInterrupt:
+                return "still running"
+
+    def test_offer_lapses_without_a_browser(self):
+        from czgram import config
+        result = self.run_loop(lambda **kw: {"error": "the browser connector isn't active"},
+                               lambda: dict(config.DEFAULTS), polls_before_stop=20)
+        self.assertEqual(result, 0)
+
+    def test_key_change_reaches_the_browser(self):
+        from czgram import config
+        keys, loads = [], iter([{}, {"bulk_key": "Shift"}] + [{"bulk_key": "Shift"}] * 50)
+        base = dict(config.DEFAULTS)
+
+        def page(**kw):
+            keys.append(kw.get("key"))
+            return {"url": "u", "frames": []}
+
+        self.run_loop(page, lambda: dict(base, **next(loads)), polls_before_stop=3)
+        self.assertEqual(keys[0], "Shift")  # the first whole-tab read already uses the new key
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -5,14 +5,19 @@ thank you for reporting them responsibly.
 
 ## Supported versions
 
+The current release is **2.1.2** (browser extension 2.1.0).
+
 | Version | Supported |
 | --- | --- |
-| 2.0.0~exp (`experimental` branch) | ✅ Security fixes |
+| 2.1.x (current: 2.1.2) | ✅ Security fixes |
+| 2.0.x | ✅ Security fixes |
 | 1.9.x | ✅ Security fixes |
-| 1.8.x and older | ❌ Update to 1.9 |
+| 1.8.x and older | ❌ Update to 2.1.2 |
 
-Fixes are released on every branch that carries the affected code (`main`, `arch-based`, `macos` and
-`experimental`). After updating, reload the browser extension too, since some fixes live there.
+Fixes are released on every branch that carries the affected code: `main` (Debian and Ubuntu), `arch-based`,
+`rpm-based` (Fedora, RHEL and openSUSE), `macos`, and `windows` while the Windows port lasts (it's experimental and
+may be dropped). The `experimental` branch is a work-in-progress snapshot and doesn't get fixes. After updating,
+reload the browser extension too, since some fixes live there.
 
 ## Reporting a vulnerability
 
@@ -24,7 +29,8 @@ and ask for a private way to send the details.
 
 Please include:
 
-- the CzGram version (`czgram --version`) and your system (Debian, Arch, macOS, desktop)
+- the CzGram version (`czgram --version`) and your system (Debian, Arch, Fedora, RHEL, openSUSE, macOS or
+  Windows, and your desktop)
 - what an attacker can do, and what they need first (a web page you visit, a program running as you, …)
 - steps or a proof of concept that shows it
 - anything you know about a fix
@@ -44,7 +50,9 @@ Please give us a chance to release a fix before you publish details.
 - The app: OCR, page reading, the analyzer, the settings window and the bar.
 - The browser extension and the native messaging host.
 - The AI connections (Claude Code, the Anthropic API and OpenAI-compatible services) and how API keys are stored.
-- The Debian, Arch and macOS installers and packages.
+- The links to the Internetová jazyková příručka that the bar shows.
+- The Debian, Arch, RPM (Fedora, RHEL, openSUSE) and macOS packages and installers, and the experimental Windows
+  installer.
 
 Out of scope: problems in Tesseract, Python, browsers, Claude Code or AI services themselves (report those to their
 projects), and attacks that need an account that already has full control of yours, which can read your files anyway.

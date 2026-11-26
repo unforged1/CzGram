@@ -21,7 +21,18 @@ DEFAULTS = {
     "custom_api_key": "",
     "custom_model": "",
     "bind_printscreen": True,
+    "bulk_key": "Alt",          # double-tapped in the browser to accept bulk mode: see BULK_KEYS
+    "ijp_check": "auto",        # point to the Internetová jazyková příručka: "off" | "auto" | "always"
 }
+
+# Keys a double tap can confirm bulk mode with, as browsers name them, and how the bar shows them.
+BULK_KEYS = {"Alt": "Alt", "Control": "Ctrl", "Shift": "Shift"}
+
+
+def bulk_key(cfg):
+    """The configured bulk-mode key; anything else in a hand-edited file falls back to Alt."""
+    key = cfg.get("bulk_key")
+    return key if key in BULK_KEYS else "Alt"
 
 
 def config_dir():

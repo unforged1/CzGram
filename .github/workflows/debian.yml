@@ -1,0 +1,77 @@
+name: Debian
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:   # docs and community files don't need a build
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deb:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Debian stable
+            image: debian:stable
+          - name: Ubuntu 24.04
+            image: ubuntu:24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Build tools and test fonts
+        run: |
+          apt-get update -q
+          apt-get install -y -q python3-pil fonts-liberation fonts-noto-core
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0, pinned
+        with:
+          persist-credentials: false
+      - name: Build the .deb
+        run: sh packaging/build_deb.sh
+      - name: Install it with apt
+        run: |
+          apt-get install -y -q ./dist/czgram_*_all.deb
+          dpkg -s czgram | grep -E '^(Status|Version)'
+      - name: Installed command
+        run: |
+          czgram --version
+          czgram --usage
+          test -x /usr/lib/czgram/czgram/nmhost.py
+          test -f /usr/share/czgram/extension/chromium/manifest.json
+          tesseract --list-langs 2>&1 | grep -x ces
+      - name: Unit tests
+        run: PYTHONPATH=. python3 -m unittest discover -s tests
+      - name: OCR benchmarks
+        run: |
+          PYTHONPATH=. python3 tests/render_sz.py
+          PYTHONPATH=. python3 tests/render_caps.py
+      - name: Scan an exercise with the installed app
+        run: |
+          python3 - <<'EOF'
+          import json, subprocess
+          from PIL import Image, ImageDraw, ImageFont
+          font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
+          img = Image.new("L", (1200, 300), 250)
+          ImageDraw.Draw(img).text((40, 100), "Doplň: Maminka b_dlí doma. Vidím (mě/mně) v zrcadle.", fill=20, font=font)
+          img.save("/tmp/exercise.png")
+          out = subprocess.run(["czgram", "--scan-file", "/tmp/exercise.png"], capture_output=True, text=True, check=True)
+          result = [json.loads(l) for l in out.stdout.splitlines() if '"result"' in l][-1]
+          found = [i["snippet"] for i in result["items"]]
+          print("found:", found)
+          assert "b_dlí" in found and "(mě/mně)" in found, found
+          EOF
+      - name: Remove it
+        run: |
+          apt-get remove -y -q czgram
+          ! test -e /usr/lib/czgram

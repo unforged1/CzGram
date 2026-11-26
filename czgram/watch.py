@@ -4,7 +4,7 @@ Runs as a child of the bar and only ever reads: it has no way to click or type o
 the page. Prints JSON lines:
   {"event":"status","message":...}   nothing to show yet, or a problem to mention
   {"event":"result",...}             a new question, in the same form as a scan's result
-  {"event":"bulk_offer","count":n}   the whole tab holds n questions; double-tap Alt to accept
+  {"event":"bulk_offer","count":n}   the whole tab holds n questions; a double tap of the bulk key accepts
   {"event":"bulk_offer_end"}         that set is gone before it was accepted
   {"event":"bulk_on","items":[...]}  accepted: answer these, in this order
   {"event":"bulk_next","index":i}    the user answered; show answer i (0-based)
@@ -157,6 +157,7 @@ def main(argv=()):
     floor = LOW_RAM_INTERVAL_S if cfg["low_ram"] else MIN_INTERVAL_S
     watcher = Watcher(cfg["language"])
     bulk = Bulk(cfg["language"])
+    key = config.bulk_key(cfg)
     last_status = None
     polls = 0
     started_at = time.monotonic()
@@ -172,14 +173,20 @@ def main(argv=()):
     while True:
         started = time.monotonic()
         if bulk.state != "on" and polls % FULL_READ_EVERY == 0:
-            full = bridge.read_page(full=True)
+            # Settings may have changed the key since this started; the bar shows the new one.
+            key = config.bulk_key(config.load())
+            full = bridge.read_page(full=True, key=key)
             if not full.get("error"):
                 for event in bulk.look(full):
                     emit(**event)
         polls += 1
-        reply = bridge.read_page(armed=bulk.state == "offered")
+        reply = bridge.read_page(armed=bulk.state == "offered", key=key)
         if reply.get("error"):
-            if not offer_only:
+            if offer_only:
+                # Without a browser there's nothing to offer; don't outlive the offer's time.
+                if bulk.state != "on" and time.monotonic() - started_at > OFFER_ONLY_S:
+                    return 0
+            else:
                 status(reply["error"])
             time.sleep(2)
             continue

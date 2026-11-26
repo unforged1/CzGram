@@ -3,12 +3,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0~exp-D97757?style=for-the-badge" alt="Version 2.0.0~exp">
-  <img src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu%20%7C%20Kali-supported-A81D33?style=for-the-badge&logo=debian&logoColor=white" alt="Debian-based: supported">
-  <img src="https://img.shields.io/badge/Arch%20%7C%20Manjaro%20%7C%20EndeavourOS-supported-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" alt="Arch-based: supported">
-  <img src="https://img.shields.io/badge/macOS-experimental-999999?style=for-the-badge&logo=apple&logoColor=white" alt="macOS: experimental">
-  <img src="https://img.shields.io/badge/security-reviewed%20Nov%202026-2EA043?style=for-the-badge" alt="Security reviewed November 2026">
-  <img src="https://img.shields.io/badge/license-MIT-4FA8FF?style=for-the-badge" alt="MIT license">
+  <img src="docs/badges/version.svg" alt="Version 2.2.0~exp">
+  <img src="docs/badges/debian.svg" alt="Debian based: native">
+  <img src="docs/badges/arch.svg" alt="Arch based: supported">
+  <img src="docs/badges/macos.svg" alt="macOS: supported">
+  <img src="docs/badges/windows.svg" alt="Windows: experimental">
+  <img src="docs/badges/rpm.svg" alt="RHEL and RPM based: supported">
+  <img src="docs/badges/security.svg" alt="Security reviewed November 2026">
+  <img src="docs/badges/license.svg" alt="MIT license">
 </p>
 
 <p align="center">
@@ -30,22 +32,39 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 | 🌐 **Page reading** | Reads the browser tab's HTML directly, with automatic fallback either way. |
 | 🖱️ **Manual mode** | Highlight any word and press PrintScreen to get the rule behind it. |
 | ⚡ **Quick mode** | Watches the page and answers each new question as it appears. It never clicks for you. |
-| 💻 **Bulk mode** (new) | A whole set of questions on one page? Double-tap Alt: one request answers them all, and each answer appears as you answer the one before. |
+| 💻 **Bulk mode** | A whole set of questions on one page? Double-tap Alt (or a key you choose): one request answers them all, and each answer appears as you answer the one before. |
 | 📚 **Offline rules** | Listed words (vyjmenovaná slova), hard/soft consonants, s/z/vz, z/ze, s/se, capital letters and more. |
 | 🤖 **AI answers** | Optional. Your Claude plan, an Anthropic key, or another provider, at about 960 input tokens per lookup. |
 | 🔥 **Speed mode** | With Opus or Fable the bar turns blue and the mascot catches fire and runs. |
 | 🔢 **Token tracking** | See what CzGram's Claude lookups have used today, this week and overall. |
 | 🛡️ **Security reviewed** | Keys stay private, secret form fields are never read, and web pages can't stall it. [Details](#security) |
 
+## 📝 What's new
+
+| Version | Changes |
+| --- | --- |
+| **2.2.0~exp** (`experimental` branch only) | [Check in the IJP](#ijp): answers follow the Internetová jazyková příručka, and the bar links the word to look up there. Off, when needed or always, in settings. |
+| **2.1.2** (current release) | The macOS badge at the top of this page shows "supported" on silver. |
+| **2.1.1** | Bug fixes. A bulk-mode offer after a PrintScreen scan now ends after 45 seconds even when the browser can't be reached. Changing the bulk-mode key takes effect without restarting quick mode. On Windows, the bulk-mode button no longer stops the bar from closing cleanly. The Debian, Ubuntu and Arch packages are now built, installed and tested automatically, like the others. |
+| **2.1.0** | The bulk-mode offer sits at the bottom of the bar, with a white **Double Alt to Confirm** button. The key can be Alt, Ctrl or Shift (Settings → Quick mode). Browser extension 2.1.0: reload it after updating. |
+| **2.0.0** | [Bulk mode](#-modes): a whole page of questions in one request. Browser extension 2.0.0. Packages for Fedora, RHEL and openSUSE on the `rpm-based` branch, and an experimental Windows port. |
+
 ## 🐧 Supported systems
 
 | System | Status | How to install |
 | --- | --- | --- |
-| <img src="https://cdn.simpleicons.org/debian/A81D33" width="16"> **Debian**, **Ubuntu**, **Kali**, Linux Mint, Pop!_OS | ✅ Supported, `.deb` package | [Debian-based](#install-debian) |
+| <img src="https://cdn.simpleicons.org/debian/A81D33" width="16"> **Debian**, **Ubuntu**, **Kali**, Linux Mint, Pop!_OS | ✅ Native, `.deb` package (`main` branch) | [Debian-based](#install-debian) |
 | <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16"> **Arch Linux**, **Manjaro**, **EndeavourOS**, Garuda | ✅ Supported, `PKGBUILD` | [Arch-based](#install-arch) |
-| <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | 🧪 Experimental, `macos` branch | [macOS](#install-macos) |
-| Fedora, openSUSE and other Linux | ⚠️ No package yet | Not tested |
-| Windows | ❌ Not supported | |
+| <img src="https://cdn.simpleicons.org/apple/999999" width="16"> **macOS** 11 or later (Apple silicon and Intel) | ✅ Supported, `macos` branch | [macOS](#install-macos) |
+| <img src="https://cdn.simpleicons.org/redhat/EE0000" width="16"> **RHEL** 9 and 10, Rocky, AlmaLinux, **Fedora**, **openSUSE** Tumbleweed and Leap 16 | ✅ Supported, `.rpm` package (`rpm-based` branch); openSUSE and AlmaLinux may need additions | [RHEL and RPM based](https://github.com/unforged1/CzGram/tree/rpm-based#install-rpm) |
+| Other Linux | ⚠️ No package yet | Not tested |
+| <img src="https://cdn.simpleicons.org/windows/0078D4" width="16"> **Windows** 10 (1809 or later) and 11 | 🧪 Experimental, `windows` branch; may be dropped later | [Windows](https://github.com/unforged1/CzGram/tree/windows#install-windows) |
+
+> [!WARNING]
+> **Windows support is experimental and isn't guaranteed to stay.** The port on the `windows` branch is tested
+> automatically on a Windows machine with every change, but it hasn't been tried on everyday PCs, and it may be
+> dropped in a later release if it can't be kept working well. Use it to try CzGram on Windows, not as something to
+> rely on for the long run. Linux and macOS are the supported systems.
 
 Tested on Kali Linux with GNOME, and in an Arch Linux container (build, install, offline OCR and all tests).
 
@@ -70,7 +89,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_2.0.0~exp_all.deb
+sudo apt install ./dist/czgram_2.2.0~exp_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
@@ -102,7 +121,7 @@ To update later, run `git pull` in the `CzGram` folder, then `makepkg -si` again
 
 <a id="install-macos"></a>
 
-### <img src="https://cdn.simpleicons.org/apple/999999" width="20"> macOS (experimental)
+### <img src="https://cdn.simpleicons.org/apple/999999" width="20"> macOS
 
 The macOS port lives on the `macos` branch. You need [Homebrew](https://brew.sh); the script installs Python, Tk,
 Pillow and Tesseract with it, adds the Czech OCR data, and creates `~/Applications/CzGram.app` and a `czgram` command.
@@ -155,6 +174,8 @@ Uninstall with `sudo apt remove czgram` (Debian-based), `sudo pacman -R czgram` 
 | Minimize RAM usage | Closes the bar when dismissed and skips 2x OCR upscaling. |
 | Claude mascot | Animated, typed-out explanation. Click it to skip the animation. |
 | Language | Explanations in English or Czech. |
+| Bulk mode shortcut | The key to double-tap to confirm bulk mode: Alt (default), Ctrl or Shift. |
+| Check in the IJP | Off, When needed (default) or Always: answers follow the Internetová jazyková příručka, and the bar links the word to look up there. See [below](#ijp). |
 | AI answers | Optional, off by default. Gives a specific answer in place of the general rule. |
 
 ## 🧭 Modes
@@ -169,14 +190,17 @@ detection turns quick mode off. Like all AI answers, the highlighted text and se
 </details>
 
 <details open>
-<summary><b>💻 Bulk mode</b> (new in 2.0, experimental): a whole page of questions in one request</summary>
+<summary><b>💻 Bulk mode</b> (new in 2.0): a whole page of questions in one request</summary>
 
 When CzGram reads a tab in page-code mode, it reads the whole page, including what's scrolled out of view. If the
-page holds a set of two or more questions, such as a worksheet or a form, the bar offers bulk mode:
+page holds a set of two or more questions, such as a worksheet or a form, the bar offers bulk mode at the bottom of
+the panel, next to a white, rounded **Double Alt to Confirm** button:
 
-> ⚡ 6 questions on this page. Double-tap Alt to answer them all at once (bulk mode).
+> ⚡ 6 questions on this page: answer them all at once (bulk mode). &nbsp; `Double Alt to Confirm`
 
-Double-tap **Alt** in the browser to accept. CzGram sends every question in **one request** and shows the answers one
+Double-tap **Alt** in the browser to accept. To use another key, choose **Alt**, **Ctrl** or **Shift** under
+**Settings → Quick mode** (or set `"bulk_key"` to `"Alt"`, `"Control"` or `"Shift"` in `config.json`); the button
+then names that key. CzGram sends every question in **one request** and shows the answers one
 at a time, starting with the first. **Answer it on the page and the next answer appears by itself**, with no further
 requests. ◀ ▶ let you look ahead or back without changing your place. The mascot sits at its laptop and types flat
 out while bulk mode is on.
@@ -191,8 +215,7 @@ out while bulk mode is on.
   about 1k for each separate lookup.
 - Like the rest of CzGram, it never clicks or types on the page.
 
-After installing 2.0, reload the browser extension (version 2.0.0), which adds whole-page reading and the Alt and
-answer counting.
+After installing 2.1, reload the browser extension (version 2.1.0), which lets the confirm key be changed.
 </details>
 
 <details>
@@ -231,9 +254,12 @@ Reading HTML needs a small extension, added once. The app's settings can open it
 - **Firefox:** `about:debugging` → This Firefox → Load Temporary Add-on → `firefox/manifest.json`.
   Firefox removes temporary add-ons when it restarts; a permanent install requires signing the add-on.
 
-The extension acts only when CzGram asks, reads only the active tab's visible content, and sends it only to the local app.
-It does need permission to read all sites to be able to do that. It never reads password, card, one-time-code or hidden
-fields, and it sends at most 1 MB per page. See [Security](#security).
+The extension acts only when CzGram asks and sends what it reads only to the local app. It reads the active tab's visible
+content, or the whole page, scrolled-out parts included, when CzGram looks for a set of questions for bulk mode. Once
+CzGram has read a tab, the extension also counts double taps of the bulk-mode key (Alt unless you change it) and the answers you give there, so bulk mode can
+follow along; it counts them and nothing else, never what you type or click. It does need permission to read all sites
+to be able to do this. It never reads password, card, one-time-code or hidden fields, and it sends at most 1 MB per page.
+See [Security](#security).
 
 ## 🤖 AI answers: three ways to connect
 
@@ -272,6 +298,26 @@ anything private. An `http://` address that isn't on this computer isn't encrypt
 Keys are stored in `~/.config/czgram/config.json`, readable only by you.
 </details>
 
+<a id="ijp"></a>
+
+### 📖 Checking in the Internetová jazyková příručka
+
+The [Internetová jazyková příručka](https://prirucka.ujc.cas.cz) (IJP) of the Czech Language Institute (ÚJČ AV ČR)
+is the reference for Czech spelling and grammar. Under **Check in the IJP** in settings:
+
+| Setting | What happens |
+| --- | --- |
+| **When needed** (default) | AI answers follow the IJP's codification. When the offline rules can't decide an item, or the AI isn't sure about a word (its spelling, vowel length, capital letter or an accepted variant), the bar shows **📖 Check in IJP: *word*** under the answer. |
+| **Always** | The same, and every answer gets the link. In bulk mode, every answer in the set. |
+| **Off** | No IJP instructions and no link. |
+
+Click the link to open that word's IJP page in your browser. Without AI answers, the bar links a highlighted word, or
+a gap's word with the offline rules' letter filled in, as it's written (the AI names the dictionary form).
+
+CzGram doesn't read the IJP itself, and the AI can't open it either: the site doesn't allow programs to look words
+up (its `robots.txt`), and its legal notice allows copying its content only with ÚJČ's consent. So the AI is told to
+follow the IJP and never to claim it checked it, and the check itself is the page you open.
+
 ### 🔢 Tracking Claude tokens
 
 Settings shows the tokens CzGram's Claude lookups have used today, over 7 days and overall. The bar shows each answer's count,
@@ -308,7 +354,8 @@ capital-letter choice.
 
 Offline by default: screenshots stay in memory and aren't saved. (The Wayland portal writes a file,
 which is deleted immediately.) If you turn on AI answers, the recognised text of each item you view is sent
-to the service you chose. Only that text is sent, never the image.
+to the service you chose. Only that text is sent, never the image. CzGram doesn't contact the Internetová jazyková
+příručka; when you click a **Check in IJP** link, your browser opens that word's page there.
 
 <a id="security"></a>
 
@@ -321,8 +368,9 @@ data on your computer and out of reach of web pages.
 | --- | --- |
 | 🔑 API keys | Stored in `~/.config/czgram/config.json`, readable only by you, masked in settings and never logged. |
 | 🤖 Claude Code | Runs with no tools, no MCP servers, no settings and no API key from your environment, in an empty folder. Text on screen can only change the answer, never make it act. |
+| 📖 IJP links | Only a word or short phrase of letters becomes a link, always to prirucka.ujc.cas.cz, so a page can't plant a link to anywhere else. It opens only when you click it. |
 | 🌐 Other AI providers | Redirects are refused, so your key is never resent to another address. Unencrypted `http://` addresses off your computer get a warning. |
-| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. |
+| 🧩 Browser connector | Reads the active tab only when CzGram asks. It skips password, card, one-time-code and hidden fields, and sends at most 20 frames and 1 MB per page. For bulk mode it counts double taps of the chosen key and answers, without recording which keys, text or choices. |
 | 🔌 Local sockets | Private to your user from the moment they're created, inside a folder only you can open. Oversized messages are refused. |
 | ⏱️ Page text | Long or crafted lines can't stall the analyzer: patterns run in linear time and lines are capped at 2,000 characters. |
 | 📦 Installers | The macOS installer downloads the Czech OCR data from a pinned commit and checks its hash before using it. |
