@@ -18,7 +18,9 @@ find "$ROOT/usr/share/czgram" -type d -exec chmod 755 {} +
 
 cat > "$ROOT/usr/bin/czgram" <<'EOF'
 #!/bin/sh
-PYTHONPATH=/usr/lib/czgram exec /usr/bin/python3 -m czgram "$@"
+# Runs the installed copy, whatever folder it's started in: with -m, Python looks in the current
+# folder first, so a czgram package or a json.py there would run instead.
+exec /usr/bin/python3 -c 'import sys; sys.path[:] = ["/usr/lib/czgram"] + [p for p in sys.path if p not in ("", ".")]; from czgram.__main__ import main; sys.exit(main(sys.argv[1:]))' "$@"
 EOF
 chmod 755 "$ROOT/usr/bin/czgram"
 
