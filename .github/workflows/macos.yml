@@ -29,6 +29,15 @@ jobs:
           czgram --usage
           ls "$HOME/Applications/CzGram.app/Contents/MacOS" "$HOME/Applications/CzGram.app/Contents/Resources"
           head -1 "$HOME/Library/Application Support/CzGram/lib/czgram/nmhost.py"
+      - name: The command ignores the folder it's started in
+        # A czgram package or json.py in the current folder must not run instead of the installed copy.
+        run: |
+          V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' czgram/__init__.py)
+          mkdir -p /tmp/planted/czgram
+          echo 'raise SystemExit("the planted czgram package ran")' > /tmp/planted/czgram/__init__.py
+          cp /tmp/planted/czgram/__init__.py /tmp/planted/czgram/__main__.py
+          echo 'raise SystemExit("the planted json.py ran")' > /tmp/planted/json.py
+          cd /tmp/planted && czgram --version && test "$(czgram --version)" = "czgram $V"
       - name: Unit tests
         # pipefail: the tail would otherwise hide a failing test run.
         run: |

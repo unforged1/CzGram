@@ -43,7 +43,9 @@ cp -R extension "$DEST/extension"
 cat > "$BREW/bin/czgram" <<EOF
 #!/bin/sh
 export PATH="$BREW/bin:\$PATH"
-PYTHONPATH="$DEST/lib" exec "$PY" -m czgram "\$@"
+# Runs the installed copy, whatever folder it's started in: with -m, Python looks in the current
+# folder first, so a czgram package or a json.py there would run instead.
+exec "$PY" -c 'import sys; sys.path[:] = ["$DEST/lib"] + [p for p in sys.path if p not in ("", ".")]; from czgram.__main__ import main; sys.exit(main(sys.argv[1:]))' "\$@"
 EOF
 chmod 755 "$BREW/bin/czgram"
 
