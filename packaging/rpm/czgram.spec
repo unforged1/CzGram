@@ -3,7 +3,7 @@
 # The files are installed by packaging/stage.sh, the same script the .deb and Arch packages use.
 
 Name:           czgram
-Version:        2.1.2
+Version:        2.1.3
 Release:        1%{?dist}
 Summary:        Czech grammar lookup on the PrintScreen key
 License:        MIT
@@ -65,6 +65,9 @@ python3 -m compileall -q -d /usr/lib/czgram %{buildroot}/usr/lib/czgram
 %{_datadir}/licenses/%{name}
 
 %changelog
+* Thu Nov 26 2026 unforged <unforged.crl@gmail.com> - 2.1.3-1
+- The czgram command always runs the installed copy, whatever folder it starts in
+
 * Tue Nov 24 2026 unforged <unforged.crl@gmail.com> - 2.1.2-1
 - README: the macOS badge shows supported on silver
 
