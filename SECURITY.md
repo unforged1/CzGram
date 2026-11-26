@@ -5,14 +5,14 @@ thank you for reporting them responsibly.
 
 ## Supported versions
 
-The current release is **2.1.2** (browser extension 2.1.0).
+The current release is **2.1.3** (browser extension 2.1.0).
 
 | Version | Supported |
 | --- | --- |
-| 2.1.x (current: 2.1.2) | ✅ Security fixes |
+| 2.1.x (current: 2.1.3) | ✅ Security fixes |
 | 2.0.x | ✅ Security fixes |
 | 1.9.x | ✅ Security fixes |
-| 1.8.x and older | ❌ Update to 2.1.2 |
+| 1.8.x and older | ❌ Update to 2.1.3 |
 
 Fixes are released on every branch that carries the affected code: `main` (Debian and Ubuntu), `arch-based`,
 `rpm-based` (Fedora, RHEL and openSUSE), `macos`, and `windows` while the Windows port lasts (it's experimental and

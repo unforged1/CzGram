@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/version.svg" alt="Version 2.2.0~exp">
+  <img src="docs/badges/version.svg" alt="Version 2.2.1~exp">
   <img src="docs/badges/debian.svg" alt="Debian based: native">
   <img src="docs/badges/arch.svg" alt="Arch based: supported">
   <img src="docs/badges/macos.svg" alt="macOS: supported">
@@ -43,8 +43,10 @@ key, or any OpenAI-compatible provider, including a self-hosted one.
 
 | Version | Changes |
 | --- | --- |
-| **2.2.0~exp** (`experimental` branch only) | [Check in the IJP](#ijp): answers follow the Internetová jazyková příručka, and the bar links the word to look up there. Off, when needed or always, in settings. |
-| **2.1.2** (current release) | The macOS badge at the top of this page shows "supported" on silver. |
+| **2.2.1~exp** (`experimental` branch only) | 2.2.0~exp on top of 2.1.3, with its launcher fix. |
+| **2.2.0~exp** | [Check in the IJP](#ijp): answers follow the Internetová jazyková příručka, and the bar links the word to look up there. Off, when needed or always, in settings. |
+| **2.1.3** (current release) | The `czgram` command always runs the installed copy. Started in a folder holding a `czgram` package or a `json.py`, it used to run that instead. Package CI now checks it. |
+| **2.1.2** | The macOS badge at the top of this page shows "supported" on silver. |
 | **2.1.1** | Bug fixes. A bulk-mode offer after a PrintScreen scan now ends after 45 seconds even when the browser can't be reached. Changing the bulk-mode key takes effect without restarting quick mode. On Windows, the bulk-mode button no longer stops the bar from closing cleanly. The Debian, Ubuntu and Arch packages are now built, installed and tested automatically, like the others. |
 | **2.1.0** | The bulk-mode offer sits at the bottom of the bar, with a white **Double Alt to Confirm** button. The key can be Alt, Ctrl or Shift (Settings → Quick mode). Browser extension 2.1.0: reload it after updating. |
 | **2.0.0** | [Bulk mode](#-modes): a whole page of questions in one request. Browser extension 2.0.0. Packages for Fedora, RHEL and openSUSE on the `rpm-based` branch, and an experimental Windows port. |
@@ -89,7 +91,7 @@ cd CzGram && sh packaging/build_deb.sh
 ```
 
 ```bash
-sudo apt install ./dist/czgram_2.2.0~exp_all.deb
+sudo apt install ./dist/czgram_2.2.1~exp_all.deb
 ```
 
 Building needs `dpkg-deb` and `python3-pil`, which most Debian-based systems already have.
