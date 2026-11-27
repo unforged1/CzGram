@@ -339,6 +339,10 @@ def analyze_in_order(lines, lang="en", limit=40):
             continue
         if len(line) > MAX_LINE:
             line = line[:MAX_LINE].rsplit(" ", 1)[0]
+        if not re.search(r"[^\W\d_]", line):
+            # A bare blank ("___"), such as an answer box beside the question, isn't a question.
+            # Counting it made a page with one question look like a set of two.
+            continue
         tokens = [strip(t) for t in _TOKEN.findall(line)]
         instruction = bool(tokens) and bool(_IMPERATIVE.fullmatch(tokens[0]))
         for item in analyze_line(line, page_czech):
