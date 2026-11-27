@@ -119,6 +119,18 @@ class OneRequest(unittest.TestCase):
 
 
 
+class BareBlank(unittest.TestCase):
+    def test_answer_box_is_not_a_second_question(self):
+        # Umíme shows one question with a blank answer box beside it: that's not a set of two.
+        lines = ["Shoda přísudku s podmětem", "Rozbombardovaná města úpěl_.", "___", "i", "y"]
+        self.assertEqual([i["snippet"] for i in analyze_in_order(lines, "cs")], ["úpěl_"])
+        self.assertEqual(Bulk("cs").look({"url": "u", "frames": ["<p>" + "</p><p>".join(lines) + "</p>"]}), [])
+
+    def test_a_real_set_still_counts(self):
+        lines = ["Doplňte i/y:", "Maminka b_dlí doma.", "___", "Pes ště_ká.", "(___)", "M_dlo voní."]
+        self.assertEqual(len(analyze_in_order(lines, "cs")), 3)
+
+
 class BulkKey(unittest.TestCase):
     """The confirm shortcut: set in config, carried to the extension, never anything but a known key."""
 
